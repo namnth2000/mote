@@ -24,13 +24,23 @@ const DEFAULT_SETTINGS = {
   scrollspy_enabled: 'true'
 };
 
+const COMPACT_MIN = 761;
+const COMPACT_MAX = 1199;
+const MOBILE_MAX = 760;
+const NOTES_WIDTH_MIN = 220;
+const NOTES_WIDTH_MAX = 480;
+const OUTLINE_WIDTH_MIN = 160;
+const OUTLINE_WIDTH_MAX = 360;
+
 const STRINGS = {
   vi: {
     inbox: 'Inbox',
     favorites: 'Yêu thích',
+    recent: 'Gần đây',
     hidden: 'Đã ẩn',
     trash: 'Thùng rác',
     groups: 'Nhóm',
+    other: 'Khác',
     settings: 'Cài đặt',
     notes: 'Ghi chú',
     search: 'Tìm kiếm',
@@ -59,27 +69,40 @@ const STRINGS = {
     saveError: 'Lưu thất bại',
     noNotes: 'Chưa có ghi chú.',
     untitled: 'Không tiêu đề',
+    newNote: 'Ghi chú mới',
     newGroup: 'Nhóm mới',
     renameGroup: 'Đổi tên nhóm',
     confirmDeleteGroup: 'Xóa nhóm này? Các ghi chú trong nhóm sẽ được chuyển về Inbox.',
     confirmDeleteForever: 'Xóa vĩnh viễn ghi chú này? Thao tác này không thể hoàn tác.',
     copied: 'Đã copy Markdown.',
     copyFailed: 'Không thể copy vào clipboard.',
-    exported: 'Đã export ghi chú.',
+    exported: 'Đã tải ghi chú.',
     backupExported: 'Đã export backup.',
     backupImported: 'Đã import backup.',
     backupInvalid: 'Backup không hợp lệ.',
     markdownImported: 'Đã import Markdown.',
     browserStorageError: 'Không thể mở local database trong trình duyệt này.',
     importConfirm: 'Import backup sẽ thay thế toàn bộ dữ liệu hiện tại. Tiếp tục?',
-    moveTo: 'Chuyển tới'
+    moveTo: 'Chuyển tới',
+    formatLink: 'Link',
+    formatQuote: 'Quote',
+    formatInlineCode: 'Inline code',
+    formatCodeBlock: 'Code block',
+    formatBulletList: 'Bullet list',
+    formatNumberedList: 'Numbered list',
+    formatTaskList: 'Task list',
+    formatTable: 'Table',
+    formatMermaid: 'Mermaid diagram',
+    formatImage: 'Image'
   },
   en: {
     inbox: 'Inbox',
     favorites: 'Favorites',
+    recent: 'Recent',
     hidden: 'Hidden',
     trash: 'Trash',
     groups: 'Groups',
+    other: 'Other',
     settings: 'Settings',
     notes: 'Notes',
     search: 'Search',
@@ -108,20 +131,31 @@ const STRINGS = {
     saveError: 'Save failed',
     noNotes: 'No notes yet.',
     untitled: 'Untitled',
+    newNote: 'New note',
     newGroup: 'New group',
     renameGroup: 'Rename group',
     confirmDeleteGroup: 'Delete this group? Its notes will be moved to Inbox.',
     confirmDeleteForever: 'Delete this note forever? This cannot be undone.',
     copied: 'Markdown copied.',
     copyFailed: 'Could not copy to clipboard.',
-    exported: 'Note exported.',
+    exported: 'Note downloaded.',
     backupExported: 'Backup exported.',
     backupImported: 'Backup imported.',
     backupInvalid: 'Invalid backup.',
     markdownImported: 'Markdown imported.',
     browserStorageError: 'Could not open the local browser database.',
     importConfirm: 'Importing a backup will replace all current data. Continue?',
-    moveTo: 'Move to'
+    moveTo: 'Move to',
+    formatLink: 'Link',
+    formatQuote: 'Quote',
+    formatInlineCode: 'Inline code',
+    formatCodeBlock: 'Code block',
+    formatBulletList: 'Bullet list',
+    formatNumberedList: 'Numbered list',
+    formatTaskList: 'Task list',
+    formatTable: 'Table',
+    formatMermaid: 'Mermaid diagram',
+    formatImage: 'Image'
   }
 };
 
@@ -138,7 +172,8 @@ const state = {
   previewRevision: 0,
   groupDialogMode: 'create',
   groupDialogId: null,
-  currentHeadings: []
+  currentHeadings: [],
+  outlineCollapsed: false
 };
 
 const el = {
@@ -149,6 +184,8 @@ const el = {
   searchInput: document.querySelector('#search-input'),
   noteList: document.querySelector('#note-list'),
   newNote: document.querySelector('#new-note'),
+  sidebarNewNote: document.querySelector('#sidebar-new-note'),
+  notesResizer: document.querySelector('#notes-resizer'),
   emptyEditor: document.querySelector('#empty-editor'),
   documentShell: document.querySelector('#document-shell'),
   noteTitle: document.querySelector('#note-title'),
@@ -168,6 +205,7 @@ const el = {
   navButtons: [...document.querySelectorAll('[data-collection]')],
   countNodes: [...document.querySelectorAll('[data-count]')],
   openSettings: document.querySelector('#open-settings'),
+  openHidden: document.querySelector('#open-hidden'),
   settingsDialog: document.querySelector('#settings-dialog'),
   themeSetting: document.querySelector('#theme-setting'),
   languageSetting: document.querySelector('#language-setting'),
@@ -181,9 +219,12 @@ const el = {
   groupForm: document.querySelector('#group-form'),
   groupDialogTitle: document.querySelector('#group-dialog-title'),
   groupName: document.querySelector('#group-name'),
-  mobileBack: document.querySelector('#mobile-back'),
+  editorBack: document.querySelector('#editor-back'),
   outline: document.querySelector('#outline'),
   outlineList: document.querySelector('#outline-list'),
+  outlineResizer: document.querySelector('#outline-resizer'),
+  toggleOutline: document.querySelector('#toggle-outline'),
+  hideOutline: document.querySelector('#hide-outline'),
   toastRegion: document.querySelector('#toast-region')
 };
 
@@ -198,6 +239,14 @@ function currentNote() {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function isCompactDesktop() {
+  return window.innerWidth >= COMPACT_MIN && window.innerWidth <= COMPACT_MAX;
 }
 
 function resolvedTheme() {
@@ -218,7 +267,7 @@ function applyLanguage() {
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
   el.searchInput.placeholder = t('searchPlaceholder');
   for (const button of el.navButtons) {
-    const label = button.querySelector('span:first-child');
+    const label = button.querySelector('[data-nav-label]');
     if (label) label.textContent = t(button.dataset.collection);
   }
   renderCollectionTitle();
@@ -238,6 +287,16 @@ function toast(message) {
   node.textContent = message;
   el.toastRegion.append(node);
   window.setTimeout(() => node.remove(), 1800);
+}
+
+function iconNode(name) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('icon');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', `/assets/icons/mote-icons.svg#${name}`);
+  svg.append(use);
+  return svg;
 }
 
 function plainSnippet(markdown) {
@@ -265,6 +324,7 @@ function selectedCollectionNotes() {
     if (type === 'hidden') return Boolean(note.isHidden);
     if (note.isHidden) return false;
     if (type === 'favorites') return Boolean(note.isFavorite);
+    if (type === 'recent') return true;
     if (type === 'group') return note.groupId === groupId;
     return note.groupId == null;
   });
@@ -286,6 +346,12 @@ function renderCounts() {
   for (const node of el.countNodes) node.textContent = counts[node.dataset.count] || '';
 }
 
+function closeOpenMenus(except = null) {
+  for (const details of document.querySelectorAll('details[open]')) {
+    if (details !== except) details.removeAttribute('open');
+  }
+}
+
 function renderGroups() {
   el.groupList.replaceChildren();
 
@@ -296,43 +362,60 @@ function renderGroups() {
     row.tabIndex = 0;
     row.setAttribute('role', 'button');
 
+    row.append(iconNode('folder'));
+
     const label = document.createElement('span');
     label.className = 'group-row-label';
     label.textContent = group.name;
     label.title = group.name;
+    row.append(label);
+
+    const details = document.createElement('details');
+    details.className = 'group-menu';
+    const summary = document.createElement('summary');
+    summary.title = `${group.name} actions`;
+    summary.setAttribute('aria-label', `${group.name} actions`);
+    summary.append(iconNode('more-vertical'));
+    const popover = document.createElement('div');
+    popover.className = 'group-menu-popover';
 
     const rename = document.createElement('button');
     rename.type = 'button';
-    rename.className = 'mini-action';
-    rename.textContent = '✎';
-    rename.title = t('renameGroup');
-    rename.setAttribute('aria-label', t('renameGroup'));
+    rename.append(iconNode('pencil'), document.createTextNode(t('renameGroup')));
     rename.addEventListener('click', (event) => {
       event.stopPropagation();
+      details.removeAttribute('open');
       openGroupDialog('rename', group);
     });
 
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'mini-action';
-    remove.textContent = '×';
-    remove.title = t('delete');
-    remove.setAttribute('aria-label', t('delete'));
+    remove.className = 'danger';
+    remove.append(iconNode('trash'), document.createTextNode(t('delete')));
     remove.addEventListener('click', async (event) => {
       event.stopPropagation();
+      details.removeAttribute('open');
       if (!window.confirm(t('confirmDeleteGroup'))) return;
       await flushSave();
       await deleteGroupAndMoveNotesToInbox(group.id);
       if (state.collection.type === 'group' && state.collection.groupId === group.id) state.collection = { type: 'inbox', groupId: null };
       await reloadData();
-      selectFirstVisibleNote();
+      if (!isCompactDesktop()) selectFirstVisibleNote();
+      else state.currentNoteId = null;
       renderAll();
     });
 
-    row.append(label, rename, remove);
+    popover.append(rename, remove);
+    details.append(summary, popover);
+    details.addEventListener('click', (event) => event.stopPropagation());
+    details.addEventListener('toggle', () => {
+      if (details.open) closeOpenMenus(details);
+    });
+    row.append(details);
+
     row.addEventListener('click', () => selectCollection({ type: 'group', groupId: group.id }));
     row.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
+      if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('details')) {
         event.preventDefault();
         selectCollection({ type: 'group', groupId: group.id });
       }
@@ -349,6 +432,7 @@ function renderCollectionTitle() {
     el.collectionTitle.textContent = t(type);
   }
   el.newNote.disabled = type === 'trash';
+  el.sidebarNewNote.disabled = type === 'trash';
 }
 
 function renderNavSelection() {
@@ -401,9 +485,11 @@ function renderNoteList() {
       state.currentNoteId = note.id;
       state.editRevision = 0;
       state.savedRevision = 0;
+      state.outlineCollapsed = false;
       renderNoteList();
       renderEditor();
-      if (window.innerWidth <= 760) document.body.classList.add('mobile-editor-open');
+      updateResponsiveLayout();
+      if (window.innerWidth <= MOBILE_MAX) document.body.classList.add('mobile-editor-open');
     });
     el.noteList.append(row);
   }
@@ -446,9 +532,14 @@ function renderEditor() {
   const hasNote = Boolean(note);
   el.emptyEditor.hidden = hasNote;
   el.documentShell.hidden = !hasNote;
+  el.copyNote.disabled = !hasNote;
+  el.exportNote.disabled = !hasNote;
 
   if (!note) {
-    document.body.classList.remove('mobile-editor-open');
+    el.toggleOutline.hidden = true;
+    el.outline.hidden = true;
+    if (window.innerWidth <= MOBILE_MAX) document.body.classList.remove('mobile-editor-open');
+    updateResponsiveLayout();
     return;
   }
 
@@ -469,10 +560,11 @@ function renderEditor() {
   el.moveNote.hidden = readOnly;
   el.hideNote.hidden = readOnly;
 
-  for (const button of el.formatToolbar.querySelectorAll('button')) button.disabled = readOnly || state.settings.editor_view !== 'markdown';
+  for (const button of el.formatToolbar.querySelectorAll('button[data-format]')) button.disabled = readOnly || state.settings.editor_view !== 'markdown';
 
   renderView();
   queueMicrotask(resizeMarkdownEditor);
+  updateResponsiveLayout();
 }
 
 async function renderView() {
@@ -483,10 +575,11 @@ async function renderView() {
   el.markdownView.hidden = !isMarkdown;
   el.previewView.hidden = isMarkdown;
   for (const button of el.viewButtons) button.classList.toggle('is-active', button.dataset.view === state.settings.editor_view);
-  for (const button of el.formatToolbar.querySelectorAll('button')) button.disabled = editorIsReadOnly(note) || !isMarkdown;
+  for (const button of el.formatToolbar.querySelectorAll('button[data-format]')) button.disabled = editorIsReadOnly(note) || !isMarkdown;
 
   if (isMarkdown) {
     el.outline.hidden = true;
+    el.toggleOutline.hidden = true;
     queueMicrotask(resizeMarkdownEditor);
     return;
   }
@@ -499,13 +592,16 @@ async function renderView() {
 }
 
 function renderOutline() {
-  const shouldShow =
+  const available =
+    Boolean(currentNote()) &&
     state.settings.scrollspy_enabled !== 'false' &&
     state.settings.editor_view === 'preview' &&
     state.currentHeadings.length >= 2 &&
-    window.innerWidth > 1180;
+    window.innerWidth >= 1200;
+  const shouldShow = available && !state.outlineCollapsed;
 
   el.outline.hidden = !shouldShow;
+  el.toggleOutline.hidden = !available || shouldShow;
   el.outlineList.replaceChildren();
   if (!shouldShow) return;
 
@@ -535,6 +631,16 @@ function updateActiveOutline() {
   for (const button of el.outlineList.querySelectorAll('button')) button.classList.toggle('is-active', button.dataset.headingId === active.id);
 }
 
+function updateResponsiveLayout() {
+  const compactNoteOpen = isCompactDesktop() && Boolean(state.currentNoteId);
+  document.body.classList.toggle('compact-note-open', compactNoteOpen);
+  if (window.innerWidth > MOBILE_MAX) document.body.classList.remove('mobile-editor-open');
+  if (window.innerWidth < 1200) {
+    el.outline.hidden = true;
+    el.toggleOutline.hidden = true;
+  }
+}
+
 function renderAll() {
   renderCounts();
   renderGroups();
@@ -543,6 +649,7 @@ function renderAll() {
   renderNoteList();
   renderEditor();
   applySettingsToControls();
+  updateResponsiveLayout();
 }
 
 async function reloadData() {
@@ -559,7 +666,9 @@ async function selectCollection(collection) {
   state.collection = collection;
   state.search = '';
   el.searchInput.value = '';
-  selectFirstVisibleNote();
+  state.outlineCollapsed = false;
+  if (isCompactDesktop()) state.currentNoteId = null;
+  else selectFirstVisibleNote();
   renderAll();
 }
 
@@ -606,7 +715,9 @@ function updateCurrentNote(fields) {
 
 async function createNote() {
   await flushSave();
-  if (state.collection.type === 'trash') state.collection = { type: 'inbox', groupId: null };
+  if (state.collection.type === 'trash' || state.collection.type === 'hidden' || state.collection.type === 'recent') {
+    state.collection = { type: 'inbox', groupId: null };
+  }
   const timestamp = nowIso();
   const note = {
     id: createId(),
@@ -614,7 +725,7 @@ async function createNote() {
     title: '',
     contentMarkdown: '',
     isFavorite: state.collection.type === 'favorites',
-    isHidden: state.collection.type === 'hidden',
+    isHidden: false,
     deletedAt: null,
     createdAt: timestamp,
     updatedAt: timestamp
@@ -623,11 +734,12 @@ async function createNote() {
   state.notes.unshift(note);
   state.currentNoteId = note.id;
   state.settings.editor_view = 'markdown';
+  state.outlineCollapsed = false;
   await setSetting('editor_view', 'markdown');
   state.editRevision = 0;
   state.savedRevision = 0;
   renderAll();
-  document.body.classList.toggle('mobile-editor-open', window.innerWidth <= 760);
+  document.body.classList.toggle('mobile-editor-open', window.innerWidth <= MOBILE_MAX);
   queueMicrotask(() => {
     el.noteTitle.focus();
     el.noteTitle.select();
@@ -653,7 +765,7 @@ async function softDeleteCurrentNote() {
     await permanentlyDeleteNote(note.id);
     state.currentNoteId = null;
     await reloadData();
-    selectFirstVisibleNote();
+    if (!isCompactDesktop()) selectFirstVisibleNote();
     renderAll();
     return;
   }
@@ -767,7 +879,7 @@ async function exportBackup() {
 }
 
 function validateBackup(snapshot) {
-  if (!snapshot || snapshot.format !== 'mote-backup' || snapshot.version !== 2) throw new Error('Unsupported backup format.');
+  if (!snapshot || snapshot.format !== 'mote-backup' || ![1, 2].includes(snapshot.version)) throw new Error('Unsupported backup format.');
   if (!Array.isArray(snapshot.groups) || !Array.isArray(snapshot.notes) || typeof snapshot.settings !== 'object') throw new Error('Backup structure is invalid.');
 
   const groupIds = new Set();
@@ -797,7 +909,7 @@ async function importBackupFile(file) {
     await reloadData();
     state.collection = { type: 'inbox', groupId: null };
     state.currentNoteId = null;
-    selectFirstVisibleNote();
+    if (!isCompactDesktop()) selectFirstVisibleNote();
     renderAll();
     toast(t('backupImported'));
   } catch (error) {
@@ -839,10 +951,58 @@ async function importMarkdownFiles(files) {
   }
   if (imported) {
     await reloadData();
-    selectFirstVisibleNote();
+    if (!isCompactDesktop()) selectFirstVisibleNote();
     renderAll();
     toast(`${t('markdownImported')} (${imported})`);
   }
+}
+
+function loadLayoutPreferences() {
+  const notesWidth = Number.parseFloat(localStorage.getItem('mote-notes-width'));
+  const outlineWidth = Number.parseFloat(localStorage.getItem('mote-outline-width'));
+  if (Number.isFinite(notesWidth)) document.documentElement.style.setProperty('--notes-w', `${clamp(notesWidth, NOTES_WIDTH_MIN, NOTES_WIDTH_MAX)}px`);
+  if (Number.isFinite(outlineWidth)) document.documentElement.style.setProperty('--outline-w', `${clamp(outlineWidth, OUTLINE_WIDTH_MIN, OUTLINE_WIDTH_MAX)}px`);
+}
+
+function registerResizeHandle(handle, onMove) {
+  let pointerId = null;
+  handle.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    pointerId = event.pointerId;
+    handle.setPointerCapture(pointerId);
+    handle.classList.add('is-dragging');
+    event.preventDefault();
+  });
+  handle.addEventListener('pointermove', (event) => {
+    if (pointerId !== event.pointerId) return;
+    onMove(event.clientX);
+  });
+  const end = (event) => {
+    if (pointerId !== event.pointerId) return;
+    if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+    pointerId = null;
+    handle.classList.remove('is-dragging');
+  };
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+}
+
+function registerPaneResizers() {
+  registerResizeHandle(el.notesResizer, (clientX) => {
+    if (window.innerWidth < 1200) return;
+    const sidebarRight = document.querySelector('.sidebar').getBoundingClientRect().right;
+    const width = clamp(clientX - sidebarRight, NOTES_WIDTH_MIN, NOTES_WIDTH_MAX);
+    document.documentElement.style.setProperty('--notes-w', `${width}px`);
+    localStorage.setItem('mote-notes-width', String(Math.round(width)));
+  });
+
+  registerResizeHandle(el.outlineResizer, (clientX) => {
+    if (window.innerWidth < 1200 || el.outline.hidden) return;
+    const shellRight = el.documentShell.getBoundingClientRect().right;
+    const width = clamp(shellRight - clientX, OUTLINE_WIDTH_MIN, OUTLINE_WIDTH_MAX);
+    document.documentElement.style.setProperty('--outline-w', `${width}px`);
+    localStorage.setItem('mote-outline-width', String(Math.round(width)));
+  });
 }
 
 function registerEventHandlers() {
@@ -850,6 +1010,7 @@ function registerEventHandlers() {
   el.addGroup.addEventListener('click', () => openGroupDialog('create'));
   el.groupForm.addEventListener('submit', submitGroupDialog);
   el.newNote.addEventListener('click', createNote);
+  el.sidebarNewNote.addEventListener('click', createNote);
 
   el.searchInput.addEventListener('input', () => {
     state.search = el.searchInput.value;
@@ -864,8 +1025,16 @@ function registerEventHandlers() {
 
   el.formatToolbar.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-format]');
-    if (button) applyFormatting(button.dataset.format);
+    if (!button) return;
+    applyFormatting(button.dataset.format);
+    button.closest('details')?.removeAttribute('open');
   });
+
+  for (const details of el.formatToolbar.querySelectorAll('details')) {
+    details.addEventListener('toggle', () => {
+      if (details.open) closeOpenMenus(details);
+    });
+  }
 
   el.viewButtons.forEach((button) => button.addEventListener('click', () => setEditorView(button.dataset.view)));
   el.copyNote.addEventListener('click', copyMarkdown);
@@ -887,6 +1056,10 @@ function registerEventHandlers() {
     applySettingsToControls();
     el.settingsDialog.showModal();
   });
+  el.openHidden.addEventListener('click', () => {
+    el.settingsDialog.close();
+    void selectCollection({ type: 'hidden', groupId: null });
+  });
 
   el.themeSetting.addEventListener('change', async () => {
     state.settings.theme = el.themeSetting.value;
@@ -903,7 +1076,17 @@ function registerEventHandlers() {
 
   el.outlineSetting.addEventListener('change', async () => {
     state.settings.scrollspy_enabled = String(el.outlineSetting.checked);
+    state.outlineCollapsed = false;
     await setSetting('scrollspy_enabled', state.settings.scrollspy_enabled);
+    renderOutline();
+  });
+
+  el.toggleOutline.addEventListener('click', () => {
+    state.outlineCollapsed = false;
+    renderOutline();
+  });
+  el.hideOutline.addEventListener('click', () => {
+    state.outlineCollapsed = true;
     renderOutline();
   });
 
@@ -922,16 +1105,28 @@ function registerEventHandlers() {
     if (file) void importBackupFile(file);
   });
 
-  el.mobileBack.addEventListener('click', async () => {
+  el.editorBack.addEventListener('click', async () => {
     await flushSave();
+    if (isCompactDesktop()) {
+      state.currentNoteId = null;
+      renderNoteList();
+      renderEditor();
+      updateResponsiveLayout();
+      return;
+    }
     document.body.classList.remove('mobile-editor-open');
   });
 
   document.querySelector('.document-main')?.addEventListener('scroll', updateActiveOutline, { passive: true });
   window.addEventListener('resize', () => {
     resizeMarkdownEditor();
+    updateResponsiveLayout();
     renderOutline();
-    if (window.innerWidth > 760) document.body.classList.remove('mobile-editor-open');
+  });
+
+  document.addEventListener('click', (event) => {
+    const details = event.target.closest('details');
+    if (!details) closeOpenMenus();
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -968,10 +1163,13 @@ function registerEventHandlers() {
       }
     }
   });
+
+  registerPaneResizers();
 }
 
 async function initialize() {
   try {
+    loadLayoutPreferences();
     await openDatabase();
     await cleanupExpiredTrash();
     state.settings = { ...DEFAULT_SETTINGS, ...await getSettings() };
@@ -980,7 +1178,7 @@ async function initialize() {
     applySettingsToControls();
     registerEventHandlers();
     applyLanguage();
-    selectFirstVisibleNote();
+    if (!isCompactDesktop()) selectFirstVisibleNote();
     renderAll();
     el.app.setAttribute('aria-busy', 'false');
 

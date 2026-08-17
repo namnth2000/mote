@@ -4,22 +4,21 @@
 
 ## 1. Goals
 
-The database stores only what Mote needs to restore the user's application state:
+The database stores only the application data required to restore Mote:
 
 - groups
 - notes
 - settings
 
-Rendered HTML, Mermaid SVG and search results are derived and are not persisted.
+Rendered HTML, Mermaid SVG, search results and layout widths are not database records.
 
-## 2. Database identity
+## 2. Schema version
 
 ```text
-name: mote-web-v2
-version: 1
+IndexedDB schema version: 1
 ```
 
-The separate name is intentional. The old Flutter web implementation used a Drift database named `mote`. The rewrite must not silently reinterpret or overwrite that storage.
+The internal database identifier is defined in `src/db.js` and should not be changed casually because it identifies the user's local data store.
 
 ## 3. Object stores
 
@@ -80,7 +79,7 @@ Key path: `id`.
 | --- | --- | --- |
 | `id` | string | stable unique ID |
 | `groupId` | string or null | null = Inbox |
-| `title` | string | empty allowed, UI shows Untitled |
+| `title` | string | empty allowed; UI displays Untitled |
 | `contentMarkdown` | string | Markdown source of truth |
 | `isFavorite` | boolean | default false |
 | `isHidden` | boolean | default false |
@@ -102,6 +101,7 @@ Derived collections:
 
 - Inbox: active, visible, `groupId == null`
 - Favorites: active, visible, `isFavorite == true`
+- Recent: active, visible, sorted by `updatedAt` descending
 - Hidden: active, `isHidden == true`
 - Trash: `deletedAt != null`
 
@@ -109,15 +109,7 @@ Derived collections:
 
 Key path: `key`.
 
-```json
-{
-  "key": "theme",
-  "value": "system",
-  "updatedAt": "2026-08-17T00:00:00.000Z"
-}
-```
-
-Supported settings:
+Supported persisted settings:
 
 | Key | Values |
 | --- | --- |
@@ -126,24 +118,26 @@ Supported settings:
 | `editor_view` | `preview`, `markdown` |
 | `scrollspy_enabled` | `true`, `false` |
 
-There is no `font_family` setting in the web rewrite.
+There is no font preference.
 
-## 7. Data rules
+Notes-pane and outline widths are layout-only preferences kept in `localStorage`, not IndexedDB.
+
+## 7. Rules
 
 ### Delete group
 
 One read/write transaction should:
 
-1. Find notes belonging to the group.
-2. Set their `groupId` to null.
-3. Update their `updatedAt`.
-4. Delete the group.
+1. find notes belonging to the group
+2. set their `groupId` to null
+3. update `updatedAt`
+4. delete the group
 
-A group deletion must not permanently delete notes.
+Deleting a group must not permanently delete its notes.
 
 ### Trash
 
-Delete note:
+Delete:
 
 ```text
 deletedAt = now
@@ -167,39 +161,35 @@ now - deletedAt >= 30 days
 permanent delete
 ```
 
-No background cron or server job is required.
+No background service is required.
 
-## 8. Search
+## 8. Search and Recent
 
-The MVP loads the local note list and performs case-insensitive title/content filtering in memory.
+The current data set is loaded locally and collection filtering/search is performed in memory.
 
-Do not add a full-text index until real note volume makes this measurably slow.
+Do not add a full-text index until real data volume makes this measurably slow.
 
-## 9. Backup transaction
+## 9. Backup/restore
 
-Full backup is created from snapshots of groups, notes and settings.
+A full backup snapshots groups, notes and persisted settings.
 
 Restore must:
 
-1. Parse and validate the complete backup first.
-2. Ask the user for destructive confirmation.
-3. Clear and replace `groups`, `notes` and `settings` in one IndexedDB transaction.
-4. Leave current data unchanged if validation fails before the transaction.
+1. parse and validate the complete backup
+2. ask for destructive confirmation
+3. clear and replace groups, notes and settings in one IndexedDB transaction
+4. leave existing data unchanged if validation fails before the transaction
 
 See `Data_Portability.md`.
 
 ## 10. Schema migrations
 
-When `DB_VERSION` increases:
+When schema version increases:
 
-- add upgrade logic inside `onupgradeneeded`
-- preserve all `contentMarkdown` values
-- never delete an object store as a shortcut for migration
-- add compatibility tests for existing data shapes
-- document the change in `CHANGELOG.md`
+- add explicit upgrade logic in `onupgradeneeded`
+- preserve `contentMarkdown`
+- never delete data as a migration shortcut
+- test existing data shapes
+- document user-visible changes in `CHANGELOG.md`
 
-Backup format versioning is separate from IndexedDB schema versioning.
-
-## 11. Not in MVP
-
-No stores for users, accounts, sync state, collaboration, comments, AI history, uploaded image binaries, rendered Markdown or Mermaid output.
+Backup format versioning is independent from IndexedDB schema versioning.

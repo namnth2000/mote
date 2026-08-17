@@ -1,10 +1,12 @@
-const CACHE_NAME = 'mote-v2-runtime-v1';
+const CACHE_NAME = 'mote-runtime-v2';
 const APP_SHELL = [
   '/',
   '/manifest.webmanifest',
+  '/branding/favicon/favicon.ico',
   '/branding/favicon/favicon-32x32.png',
-  '/branding/favicon/android-chrome-192x192.png',
-  '/branding/favicon/android-chrome-512x512.png'
+  '/branding/app-icon-192-light.png',
+  '/branding/app-icon-512-light.png',
+  '/assets/icons/mote-icons.svg'
 ];
 
 self.addEventListener('install', (event) => {

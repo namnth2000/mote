@@ -26,3 +26,16 @@ test('checkbox prefixes all selected lines', () => {
   const result = formatSelection({ text: source, start: 0, end: source.length }, 'checkbox');
   assert.equal(result.text, '- [ ] one\n- [ ] two');
 });
+
+test('mermaid inserts a ready-to-edit fenced diagram block', () => {
+  const result = formatSelection({ text: '', start: 0, end: 0 }, 'mermaid');
+  assert.match(result.text, /^```mermaid\n/);
+  assert.match(result.text, /flowchart LR/);
+  assert.match(result.text, /```$/);
+});
+
+test('image inserts Markdown image syntax and selects the URL', () => {
+  const result = formatSelection({ text: '', start: 0, end: 0 }, 'image');
+  assert.equal(result.text, '![Alt text](https://)');
+  assert.equal(result.text.slice(result.start, result.end), 'https://');
+});

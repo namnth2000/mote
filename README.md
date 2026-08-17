@@ -2,83 +2,59 @@
 
 > **M**arkdown N**ote**
 
-Mote is a minimal, local-first Markdown note app built as a web-first PWA.
+Mote is a minimal, local-first Markdown note app for writing and organizing notes without an account or backend.
 
-The current version is a controlled rewrite of the original Flutter implementation. The goal is simpler: make writing, selecting, copying, pasting and formatting Markdown reliable in the browser before adding more platform-specific features.
+Current version: **1.0.0**.
 
-## Why a web-first rewrite?
-
-The original Mote targeted Web, Windows, Android and iOS from one Flutter codebase. That made the implementation heavier than the current product needed, especially around text selection, caret behavior, clipboard interactions and mobile editing.
-
-Mote now follows a smaller architecture:
-
-```text
-Native <textarea>
-      ↓
-Markdown source
-      ↓
-Preview renderer
-      ↓
-IndexedDB
-      ↓
-PWA
-```
-
-Markdown remains the only source of truth.
-
-## Current features
+## Features
 
 - Notes and groups
-- Inbox, Favorites, Hidden and Trash
-- Trash cleanup after 30 days
+- Inbox, Favorites and Recent
+- Hidden notes available from Settings
+- Trash with 30-day cleanup
 - Native Markdown editor using `<textarea>`
 - Preview mode
-- Basic Markdown formatting toolbar
-- Tables, fenced code blocks and Mermaid preview
+- Markdown formatting toolbar
+- Tables, fenced code blocks, Mermaid diagrams and images
 - Syntax highlighting in Preview
-- Search
+- Search within the current note list
 - Auto save
 - Copy Markdown
 - Import and export `.md`
 - Full JSON backup and restore
-- Light, Dark and System theme
+- Light, Dark and System themes
 - Vietnamese and English UI
-- Desktop outline for headings
-- Local-first IndexedDB storage
+- Resizable notes list on desktop
+- Resizable, hideable heading outline on large desktop screens
+- Compact layout for smaller desktop/tablet widths
 - Installable PWA
 
-## Fixed typography
-
-Mote intentionally does not provide an Editor Font setting.
-
-- App UI and Preview use Inter with system fallbacks.
-- Markdown editing uses the browser's native monospace stack.
-- The editing and Preview typography are part of Mote's product design rather than user preferences.
-
 ## Tech stack
+
+Mote intentionally keeps the stack small:
 
 - HTML
 - CSS
 - Vanilla JavaScript
 - IndexedDB
-- Vite as the build tool
-- Marked for Markdown parsing
-- DOMPurify for rendered HTML sanitization
-- Mermaid for diagrams
-- highlight.js for code highlighting
+- Vite
+- Marked + DOMPurify
+- highlight.js
+- Mermaid
+- PWA hosted on Cloudflare Pages
 
-There is no UI framework and no backend in the current MVP.
+The Markdown editing surface uses the browser's native `<textarea>`. UI and Preview use Inter; Markdown editing and code use a native monospace stack.
 
 ## Run locally
 
-Requirements: a recent Node.js LTS release.
+Requires Node.js 20 or newer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Useful checks:
+Checks:
 
 ```bash
 npm run check
@@ -86,11 +62,7 @@ npm test
 npm run build
 ```
 
-Production output:
-
-```text
-dist/
-```
+Production output is generated in `dist/`.
 
 ## Project structure
 
@@ -105,37 +77,25 @@ mote/
 │   ├── format.js
 │   ├── markdown.js
 │   └── styles.css
-├── scripts/
-│   └── copy-static.mjs
-├── test/
-│   └── format.test.js
 ├── assets/
+│   ├── branding/
+│   ├── fonts/
+│   └── icons/
 ├── branding/
+├── scripts/
+├── test/
 └── docs/
 ```
 
 ## Documentation
 
-- [Product Spec](docs/Product_Spec.md)
-- [Tech Stack](docs/Tech_Stack.md)
+- [Project Spec](docs/Project_Spec.md)
 - [Architecture Design](docs/Architecture_Design.md)
 - [Database Design](docs/Database_Design.md)
 - [Data Portability](docs/Data_Portability.md)
 - [Deployment](docs/Deployment.md)
 
-`docs/mockup.html` is kept as a visual reference only. The production implementation is the source of truth for current behavior.
-
-## Previous implementation
-
-The previous Flutter implementation is archived at `namnth2000/mote-old`.
-
-The web rewrite uses a separate IndexedDB database named `mote-web-v2`. It does not automatically reinterpret the old Drift/SQLite browser database.
-
-Before replacing a production deployment that contains important notes, export data from the old app first. See [Data Portability](docs/Data_Portability.md).
-
-## Status
-
-Mote 2 is currently an alpha rewrite. The priority is editor reliability and a small, maintainable web MVP rather than feature parity with the Flutter version.
+`docs/mockup.html` is a visual reference. The production implementation is the source of truth for current behavior.
 
 ## Contributing
 
