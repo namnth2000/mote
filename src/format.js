@@ -18,9 +18,7 @@ function wrapInline(state, before, after, placeholder = 'text') {
   const selected = text.slice(start, end);
   const content = selected || placeholder;
   const replacement = `${before}${content}${after}`;
-  const selectionStart = before.length;
-  const selectionEnd = before.length + content.length;
-  return replaceRange(text, start, end, replacement, selectionStart, selectionEnd);
+  return replaceRange(text, start, end, replacement, before.length, before.length + content.length);
 }
 
 function selectedLineRange(text, start, end) {
@@ -35,8 +33,7 @@ function prefixLines(state, prefixFactory) {
   const { start, end } = normalizeSelection(text, state.start, state.end);
   const { lineStart, lineEnd } = selectedLineRange(text, start, end);
   const block = text.slice(lineStart, lineEnd);
-  const lines = block.split('\n');
-  const transformed = lines.map((line, index) => `${prefixFactory(index, line)}${line}`).join('\n');
+  const transformed = block.split('\n').map((line, index) => `${prefixFactory(index, line)}${line}`).join('\n');
   return replaceRange(text, lineStart, lineEnd, transformed, start - lineStart, transformed.length);
 }
 
@@ -46,10 +43,7 @@ function heading(state, level) {
   const { lineStart, lineEnd } = selectedLineRange(text, start, end);
   const block = text.slice(lineStart, lineEnd);
   const prefix = `${'#'.repeat(level)} `;
-  const transformed = block
-    .split('\n')
-    .map((line) => `${prefix}${line.replace(/^#{1,6}\s+/, '')}`)
-    .join('\n');
+  const transformed = block.split('\n').map((line) => `${prefix}${line.replace(/^#{1,6}\s+/, '')}`).join('\n');
   return replaceRange(text, lineStart, lineEnd, transformed, prefix.length, transformed.length);
 }
 
@@ -61,18 +55,21 @@ function codeBlock(state) {
   const trailing = end < text.length && text[end] !== '\n' ? '\n' : '';
   const open = `${leading}\`\`\`\n`;
   const close = `\n\`\`\`${trailing}`;
-  const replacement = `${open}${selected}${close}`;
-  return replaceRange(text, start, end, replacement, open.length, open.length + selected.length);
+  return replaceRange(text, start, end, `${open}${selected}${close}`, open.length, open.length + selected.length);
+}
+
+function insertBlock(state, block, selectionOffsetStart = 0, selectionOffsetEnd = block.length) {
+  const { text } = state;
+  const { start, end } = normalizeSelection(text, state.start, state.end);
+  const leading = start > 0 && text[start - 1] !== '\n' ? '\n\n' : '';
+  const trailing = end < text.length && text[end] !== '\n' ? '\n\n' : '';
+  const replacement = `${leading}${block}${trailing}`;
+  return replaceRange(text, start, end, replacement, leading.length + selectionOffsetStart, leading.length + selectionOffsetEnd);
 }
 
 function insertTable(state) {
-  const { text } = state;
-  const { start, end } = normalizeSelection(text, state.start, state.end);
   const table = '| Column 1 | Column 2 |\n| --- | --- |\n| Value | Value |';
-  const leading = start > 0 && text[start - 1] !== '\n' ? '\n\n' : '';
-  const trailing = end < text.length && text[end] !== '\n' ? '\n\n' : '';
-  const replacement = `${leading}${table}${trailing}`;
-  return replaceRange(text, start, end, replacement, leading.length, leading.length + table.length);
+  return insertBlock(state, table, 2, 10);
 }
 
 function insertLink(state) {
@@ -81,6 +78,22 @@ function insertLink(state) {
   const selected = text.slice(start, end) || 'link text';
   const replacement = `[${selected}](https://)`;
   const urlStart = 1 + selected.length + 2;
+  return replaceRange(text, start, end, replacement, urlStart, urlStart + 'https://'.length);
+}
+
+function insertMermaid(state) {
+  const diagram = '```mermaid\nflowchart LR\n    A[Start] --> B[End]\n```';
+  const sourceStart = diagram.indexOf('flowchart');
+  const sourceEnd = diagram.lastIndexOf('\n```');
+  return insertBlock(state, diagram, sourceStart, sourceEnd);
+}
+
+function insertImage(state) {
+  const { text } = state;
+  const { start, end } = normalizeSelection(text, state.start, state.end);
+  const selected = text.slice(start, end) || 'Alt text';
+  const replacement = `![${selected}](https://)`;
+  const urlStart = 2 + selected.length + 2;
   return replaceRange(text, start, end, replacement, urlStart, urlStart + 'https://'.length);
 }
 
@@ -102,6 +115,8 @@ export function formatSelection(state, command) {
     case 'h4': return heading(state, 4);
     case 'codeBlock': return codeBlock(state);
     case 'table': return insertTable(state);
+    case 'mermaid': return insertMermaid(state);
+    case 'image': return insertImage(state);
     default: return state;
   }
 }

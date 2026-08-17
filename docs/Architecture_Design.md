@@ -2,11 +2,9 @@
 
 > Web-first, local-first, Markdown-first.
 
-## 1. Architecture goal
+## 1. Goal
 
-Mote should be small enough to understand without a framework-specific architecture diagram.
-
-The web MVP uses:
+Mote uses a small architecture that is easy to understand and maintain:
 
 ```text
 HTML + CSS + Vanilla JavaScript
@@ -16,7 +14,7 @@ Native browser APIs
 IndexedDB
 ```
 
-Vite is a build tool only. It is not the application framework.
+Vite is the build tool, not an application framework.
 
 ## 2. High-level architecture
 
@@ -44,15 +42,24 @@ Each note stores:
 contentMarkdown: string
 ```
 
-No rendered HTML is persisted. No rich-text tree is persisted. Preview can always be regenerated from Markdown source.
+Rendered HTML, syntax highlighting and Mermaid SVG are derived. They are never the note source of truth.
 
-## 4. Editor architecture
+## 4. Modules
 
-### Markdown mode
+```text
+src/
+├── app.js       UI state, events and feature orchestration
+├── db.js        IndexedDB persistence and backup transactions
+├── format.js    Pure Markdown selection transforms
+├── markdown.js  Markdown Preview pipeline
+└── styles.css   Product styling and responsive layout
+```
 
-Use a normal `<textarea>`.
+Keep this structure until a file becomes genuinely difficult to reason about. Do not pre-create extra architectural layers without a concrete need.
 
-Do not implement a custom text renderer for the editing surface.
+## 5. Editor architecture
+
+Markdown mode uses a normal `<textarea>`.
 
 Formatting flow:
 
@@ -68,70 +75,49 @@ new string + new selection
 textarea.value
 ```
 
-`format.js` contains pure Markdown string transforms wherever possible so editor behavior can be tested without DOM rendering.
+`format.js` keeps formatting transformations pure where practical so they can be unit-tested without browser rendering.
 
-### Why no custom scroll/caret mapping?
-
-Markdown mode and Preview are intentionally independent views of the same source.
-
-Switching views does not need to reproduce an exact rendered pixel position. Avoid coupling selection/caret state to Markdown parser block positions.
-
-This removes a large class of bugs around caret reveal, selection jumps, mobile keyboard resizing, code block selection and view-switch scroll restoration.
-
-### Preview mode
-
-Preview is read-only rendered DOM.
+Preview is a separate read-only view:
 
 ```text
-Markdown string
+Markdown source
     ↓
 Marked
     ↓
 DOMPurify
     ↓
 Preview DOM
-    ├── highlight.js for code
-    ├── Mermaid for mermaid blocks
+    ├── highlight.js
+    ├── Mermaid
     └── heading IDs for outline
 ```
 
-External links receive safe `rel` attributes. Mermaid uses strict security settings.
+Markdown and Preview do not maintain a pixel-perfect scroll/caret mapping. This keeps the editing path simple and lets native selection behavior remain independent from rendered content.
 
-## 5. Application modules
+## 6. Application state
 
-```text
-src/
-├── app.js       UI state, events, feature orchestration
-├── db.js        IndexedDB persistence and backup transactions
-├── format.js    Pure Markdown selection transforms
-├── markdown.js  Markdown render pipeline
-└── styles.css   Product styling and responsive layout
-```
+Transient state lives in memory:
 
-Keep this structure until a file becomes hard to reason about. Do not pre-create domain/usecase/controller layers just to imitate a larger application architecture.
+- current collection
+- current note ID
+- search text
+- save revision/status
+- current Preview headings
+- whether the outline is manually collapsed
+- open dialogs/menus
 
-## 6. State model
+Persisted application data lives in IndexedDB:
 
-Transient UI state lives in memory:
+- groups
+- notes
+- settings
 
-```text
-current collection
-current note ID
-search text
-save status/revision
-current headings
-open dialogs
-```
+Layout widths are lightweight local UI preferences stored in `localStorage`:
 
-Persisted state lives in IndexedDB:
+- notes pane width
+- outline width
 
-```text
-groups
-notes
-settings
-```
-
-Do not persist derived data such as rendered HTML, current search results or collection counts.
+Derived data such as Preview HTML, counts and search results is not persisted.
 
 ## 7. Auto save
 
@@ -140,138 +126,141 @@ input
   ↓
 update in-memory note
   ↓
-mark Saving
+Saving
   ↓
 ~450 ms debounce
   ↓
-IndexedDB put
+IndexedDB write
   ↓
-mark Saved
+Saved
 ```
 
-Pending changes are also flushed when the page becomes hidden and before relevant navigation/mutations where possible.
+Pending changes are flushed before important navigation/mutations and when the page becomes hidden where possible.
 
-The UI must never report `Saved` before the corresponding IndexedDB write completes.
+The UI must not display `Saved` before the persistence operation completes.
 
-## 8. Database
+## 8. Collections
 
-Use native IndexedDB directly.
+System collections are derived from note fields instead of separate database rows:
 
-The database is named:
+- Inbox: active + visible + no group
+- Favorites: active + visible + favorite
+- Recent: active + visible ordered by `updatedAt`
+- Hidden: active + hidden
+- Trash: deleted
+
+Groups are persisted rows.
+
+## 9. Responsive shell
+
+### Large desktop - 1200px and above
 
 ```text
-mote-web-v2
+Navigation | Notes | Editor / Preview | Outline
 ```
 
-This intentionally does not reuse the old Flutter Drift database namespace.
+- Navigation: fixed 226px.
+- Notes: resizable 220-480px.
+- Outline: resizable 160-360px and hideable.
 
-See `Database_Design.md`.
+### Compact - 761px to 1199px
 
-## 9. PWA architecture
+Browsing:
 
-The PWA consists of:
+```text
+Navigation | Notes | Empty editor area
+```
+
+After opening a note:
+
+```text
+Navigation | Editor
+```
+
+The notes pane and outline are hidden while the note is open. Back returns to the notes pane.
+
+### Mobile - 760px and below
+
+Navigation + notes remain the browse surface. The editor opens as a full overlay and closes with Back.
+
+## 10. Resizing
+
+Pane resize handles use Pointer Events.
+
+Notes width:
+
+```text
+220px <= width <= 480px
+```
+
+Outline width:
+
+```text
+160px <= width <= 360px
+```
+
+Resize preferences do not change note data and can be safely reset.
+
+## 11. Outline / Scrollspy
+
+The Preview renderer returns heading metadata. On large desktop screens:
+
+```text
+Preview headings
+      ↓
+outline list
+      ↓
+document scroll
+      ↓
+active heading
+```
+
+The outline can be manually collapsed. When collapsed, a toolbar action restores it. Compact/mobile layouts suppress it automatically.
+
+## 12. PWA
+
+PWA files:
 
 - `manifest.webmanifest`
 - `sw.js`
-- icons/branding assets
+- local branding/icons
 
-The service worker caches the application shell and same-origin static assets for resilience.
+The service worker caches the app shell and same-origin static assets. IndexedDB note data is independent from the Cache Storage used by the service worker.
 
-IndexedDB note data is independent from the service worker cache. A service worker update must never delete application data.
+## 13. Security and privacy
 
-## 10. Security and privacy
+- Sanitize rendered Markdown before inserting it into Preview.
+- Mermaid uses strict security settings.
+- A render failure must never alter Markdown source.
+- Do not upload or remotely log raw note content.
+- Remote links/images may contact their own origins when used by the browser.
 
-### Rendered Markdown
+## 14. Error handling
 
-Raw Markdown must not be inserted into the DOM as trusted HTML. Render flow uses sanitization before the result is attached to Preview.
-
-### Mermaid
-
-Use strict Mermaid security settings. If rendering fails, keep the Markdown source unchanged and show a non-destructive fallback/error state.
-
-### External content
-
-Remote Markdown images and links may cause the browser to contact external origins when the user opens Preview. Mote itself does not upload note content to a server.
-
-### Local-first
-
-Do not log raw note content to remote analytics or crash reporting.
-
-## 11. Responsive layout
-
-### Desktop
-
-```text
-┌─────────────┬──────────────┬──────────────────────────┬───────────┐
-│ Collections │ Notes        │ Editor / Preview         │ Outline   │
-└─────────────┴──────────────┴──────────────────────────┴───────────┘
-```
-
-### Mobile
-
-Use list -> editor navigation within the same page shell.
-
-The editor toolbar remains horizontally scrollable rather than wrapping into multiple rows. Native textarea behavior remains the priority when the on-screen keyboard is open.
-
-## 12. Error handling
-
-- database open/write failure -> visible message, do not pretend data is saved
-- Markdown render failure -> preserve source, show failure state
-- Mermaid failure -> preserve source, show source/error fallback
+- database open/write failure -> visible error, never pretend the note was saved
+- Markdown/Mermaid render failure -> preserve source and show a non-destructive fallback
 - backup validation failure -> do not modify current database
-- file import failure -> skip/report the affected file without destroying existing data
+- file import failure -> do not destroy existing notes
 
-## 13. Performance
+## 15. Testing
 
-MVP optimizations:
+Automated checks cover:
 
-- debounce writes
-- render Preview only when needed or content changed
-- avoid storing rendered HTML
-- query small local datasets in memory after IndexedDB load
-- avoid heavyweight editor abstractions
+- JavaScript syntax
+- Markdown selection transforms
+- production build
 
-Do not add workers, virtualized lists, full-text indexes or caching layers without measured need.
+Manual browser testing should cover:
 
-## 14. Testing strategy
+- selection and caret behavior
+- copy/paste and undo/redo
+- links and code blocks
+- Preview/MD switching
+- pane resize/hide/show
+- 1024px compact layout
+- mobile keyboard and navigation
+- favicon/PWA installation
 
-### Automated
+## 16. Complexity rule
 
-At minimum test pure editor transformations for:
-
-- bold/italic wrappers
-- links
-- inline code
-- fenced code blocks
-- multi-line list operations
-- collapsed and non-collapsed selections
-
-Run JavaScript syntax checks for application modules.
-
-### Manual
-
-Production editor smoke tests should cover:
-
-- Chrome/Edge desktop
-- Safari/iPhone
-- Chrome/Android when available
-- text selection
-- double click/double tap
-- copy/paste
-- undo/redo
-- code block editing
-- link editing
-- mobile keyboard
-- theme and PWA behavior
-
-## 15. Decision rule for future complexity
-
-Add a new abstraction only when the current implementation has a demonstrated limitation.
-
-Examples:
-
-- adopt CodeMirror only if native textarea limitations become a real user problem
-- adopt Capacitor only if native APIs/store distribution become necessary
-- add a backend only if sync/account features are validated
-
-Do not introduce these layers in anticipation of hypothetical requirements.
+Add a new abstraction only when the current implementation has a demonstrated limitation. Avoid adding frameworks, editor engines or backend layers in anticipation of hypothetical requirements.

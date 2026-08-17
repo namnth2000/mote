@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#F4C95D" />
     <meta name="description" content="Mote is a minimal, local-first Markdown note app." />
+    <link rel="icon" href="/branding/favicon/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/branding/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/branding/favicon/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/branding/favicon/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Mote - Markdown Notes</title>
@@ -14,28 +16,50 @@
     <div id="app" class="app-shell" aria-busy="true">
       <aside class="sidebar" aria-label="Collections">
         <div class="brand-row">
-          <img class="brand-logo" src="/assets/branding/mote-logo.svg" alt="" width="34" height="34" />
-          <div>
-            <strong>Mote</strong>
-            <span>Markdown Note</span>
-          </div>
+          <img class="brand-logo" src="/assets/branding/mote-logo.svg" alt="" width="30" height="30" />
+          <strong>mote</strong>
         </div>
 
         <nav class="collection-nav" aria-label="System collections">
-          <button class="nav-item is-active" data-collection="inbox"><span>Inbox</span><span class="count" data-count="inbox"></span></button>
-          <button class="nav-item" data-collection="favorites"><span>Favorites</span><span class="count" data-count="favorites"></span></button>
-          <button class="nav-item" data-collection="hidden"><span>Hidden</span><span class="count" data-count="hidden"></span></button>
-          <button class="nav-item" data-collection="trash"><span>Trash</span><span class="count" data-count="trash"></span></button>
+          <button class="nav-item is-active" data-collection="inbox" type="button">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#inbox"></use></svg>
+            <span class="nav-label" data-nav-label>Inbox</span>
+            <span class="count" data-count="inbox"></span>
+          </button>
+          <button class="nav-item" data-collection="favorites" type="button">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#star"></use></svg>
+            <span class="nav-label" data-nav-label>Favorites</span>
+            <span class="count" data-count="favorites"></span>
+          </button>
+          <button class="nav-item" data-collection="recent" type="button">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#history"></use></svg>
+            <span class="nav-label" data-nav-label>Recent</span>
+          </button>
         </nav>
 
         <div class="sidebar-section-heading">
           <span data-i18n="groups">Groups</span>
-          <button id="add-group" class="icon-button" type="button" title="Add group" aria-label="Add group">+</button>
+          <button id="add-group" class="icon-button small-icon-button" type="button" title="Add group" aria-label="Add group">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#plus"></use></svg>
+          </button>
         </div>
         <div id="group-list" class="group-list"></div>
 
         <div class="sidebar-footer">
-          <button id="open-settings" class="nav-item" type="button"><span data-i18n="settings">Settings</span></button>
+          <div class="sidebar-section-heading footer-heading"><span data-i18n="other">Other</span></div>
+          <button class="nav-item" data-collection="trash" type="button">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#trash"></use></svg>
+            <span class="nav-label" data-nav-label>Trash</span>
+            <span class="count" data-count="trash"></span>
+          </button>
+          <button id="open-settings" class="nav-item" type="button">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#settings"></use></svg>
+            <span class="nav-label" data-i18n="settings">Settings</span>
+          </button>
+          <button id="sidebar-new-note" class="sidebar-new-note" type="button">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#plus"></use></svg>
+            <span data-i18n="newNote">New note</span>
+          </button>
         </div>
       </aside>
 
@@ -45,43 +69,74 @@
             <p class="eyebrow" data-i18n="notes">Notes</p>
             <h1 id="collection-title">Inbox</h1>
           </div>
-          <button id="new-note" class="primary-icon-button" type="button" title="New note" aria-label="New note">+</button>
+          <button id="new-note" class="primary-icon-button" type="button" title="New note" aria-label="New note">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#plus"></use></svg>
+          </button>
         </header>
         <label class="search-box">
           <span class="sr-only" data-i18n="search">Search</span>
+          <svg class="icon search-icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#search"></use></svg>
           <input id="search-input" type="search" autocomplete="off" placeholder="Search notes..." />
         </label>
         <div id="note-list" class="note-list"></div>
+        <div id="notes-resizer" class="pane-resizer notes-resizer" role="separator" aria-orientation="vertical" aria-label="Resize notes list"></div>
       </section>
 
       <main class="editor-pane" aria-label="Editor">
         <header class="editor-toolbar">
-          <button id="mobile-back" class="icon-button mobile-only" type="button" aria-label="Back">←</button>
+          <button id="editor-back" class="icon-button editor-back" type="button" aria-label="Back" title="Back">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#arrow-left"></use></svg>
+          </button>
+
           <div id="format-toolbar" class="format-toolbar" aria-label="Markdown formatting">
-            <button type="button" data-format="bold" title="Bold"><strong>B</strong></button>
-            <button type="button" data-format="italic" title="Italic"><em>I</em></button>
-            <button type="button" data-format="underline" title="Underline"><u>U</u></button>
-            <button type="button" data-format="strike" title="Strikethrough"><s>S</s></button>
-            <button type="button" data-format="h1" title="Heading 1">H1</button>
-            <button type="button" data-format="h2" title="Heading 2">H2</button>
-            <button type="button" data-format="h3" title="Heading 3">H3</button>
-            <button type="button" data-format="h4" title="Heading 4">H4</button>
-            <button type="button" data-format="link" title="Link">Link</button>
-            <button type="button" data-format="quote" title="Quote">Quote</button>
-            <button type="button" data-format="inlineCode" title="Inline code">Code</button>
-            <button type="button" data-format="codeBlock" title="Code block">```</button>
-            <button type="button" data-format="bullet" title="Bullet list">• List</button>
-            <button type="button" data-format="numbered" title="Numbered list">1. List</button>
-            <button type="button" data-format="checkbox" title="Checkbox">☑</button>
-            <button type="button" data-format="table" title="Table">Table</button>
+            <button class="format-text-button format-bold" type="button" data-format="bold" title="Bold"><strong>B</strong></button>
+            <button class="format-text-button format-italic" type="button" data-format="italic" title="Italic"><em>I</em></button>
+            <button class="format-text-button format-underline" type="button" data-format="underline" title="Underline"><u>U</u></button>
+            <button class="format-text-button format-strike" type="button" data-format="strike" title="Strikethrough"><s>S</s></button>
+
+            <details class="toolbar-menu heading-menu">
+              <summary class="format-text-button" title="Heading" aria-label="Heading">H</summary>
+              <div class="toolbar-popover compact-popover">
+                <button type="button" data-format="h1"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#heading"></use></svg><span>H1</span></button>
+                <button type="button" data-format="h2"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#heading"></use></svg><span>H2</span></button>
+                <button type="button" data-format="h3"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#heading"></use></svg><span>H3</span></button>
+                <button type="button" data-format="h4"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#heading"></use></svg><span>H4</span></button>
+              </div>
+            </details>
+
+            <details class="toolbar-menu more-format-menu">
+              <summary class="format-icon-button" title="More formatting" aria-label="More formatting">
+                <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#more"></use></svg>
+              </summary>
+              <div class="toolbar-popover formatting-popover">
+                <button type="button" data-format="link"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#link"></use></svg><span data-i18n="formatLink">Link</span></button>
+                <button type="button" data-format="quote"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#quote"></use></svg><span data-i18n="formatQuote">Quote</span></button>
+                <button type="button" data-format="inlineCode"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#code"></use></svg><span data-i18n="formatInlineCode">Inline code</span></button>
+                <button type="button" data-format="codeBlock"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#code-block"></use></svg><span data-i18n="formatCodeBlock">Code block</span></button>
+                <button type="button" data-format="bullet"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#list"></use></svg><span data-i18n="formatBulletList">Bullet list</span></button>
+                <button type="button" data-format="numbered"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#list-ordered"></use></svg><span data-i18n="formatNumberedList">Numbered list</span></button>
+                <button type="button" data-format="checkbox"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#task"></use></svg><span data-i18n="formatTaskList">Task list</span></button>
+                <button type="button" data-format="table"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#table"></use></svg><span data-i18n="formatTable">Table</span></button>
+                <button type="button" data-format="mermaid"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#workflow"></use></svg><span data-i18n="formatMermaid">Mermaid diagram</span></button>
+                <button type="button" data-format="image"><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#image"></use></svg><span data-i18n="formatImage">Image</span></button>
+              </div>
+            </details>
           </div>
+
           <div class="toolbar-spacer"></div>
           <div class="view-toggle" role="group" aria-label="Editor view">
             <button type="button" data-view="preview">Preview</button>
             <button type="button" data-view="markdown">MD</button>
           </div>
-          <button id="copy-note" class="icon-button" type="button" title="Copy Markdown" aria-label="Copy Markdown">Copy</button>
-          <button id="export-note" class="icon-button" type="button" title="Export Markdown" aria-label="Export Markdown">↓</button>
+          <button id="copy-note" class="icon-button" type="button" title="Copy Markdown" aria-label="Copy Markdown">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#copy"></use></svg>
+          </button>
+          <button id="export-note" class="icon-button" type="button" title="Download Markdown" aria-label="Download Markdown">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#download"></use></svg>
+          </button>
+          <button id="toggle-outline" class="icon-button" type="button" title="Show outline" aria-label="Show outline" hidden>
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#panel-right"></use></svg>
+          </button>
         </header>
 
         <div id="empty-editor" class="empty-editor">
@@ -112,7 +167,13 @@
             <article id="preview-view" class="markdown-preview" aria-label="Markdown preview"></article>
           </div>
           <aside id="outline" class="outline" aria-label="Document outline" hidden>
-            <div class="outline-heading" data-i18n="outline">Outline</div>
+            <div id="outline-resizer" class="pane-resizer outline-resizer" role="separator" aria-orientation="vertical" aria-label="Resize outline"></div>
+            <div class="outline-heading-row">
+              <div class="outline-heading" data-i18n="outline">Outline</div>
+              <button id="hide-outline" class="icon-button small-icon-button" type="button" title="Hide outline" aria-label="Hide outline">
+                <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#x"></use></svg>
+              </button>
+            </div>
             <nav id="outline-list"></nav>
           </aside>
         </section>
@@ -137,8 +198,18 @@
       <form method="dialog">
         <div class="dialog-title-row">
           <h2 data-i18n="settings">Settings</h2>
-          <button class="icon-button" value="cancel" type="submit" aria-label="Close">×</button>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Close">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#x"></use></svg>
+          </button>
         </div>
+
+        <button id="open-hidden" class="settings-link-row" type="button">
+          <span class="settings-link-main">
+            <svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#eye-off"></use></svg>
+            <span data-i18n="hidden">Hidden</span>
+          </span>
+          <span class="settings-link-tail"><span class="count" data-count="hidden"></span><svg class="icon" aria-hidden="true"><use href="/assets/icons/mote-icons.svg#chevron-right"></use></svg></span>
+        </button>
 
         <label class="setting-row">
           <span data-i18n="theme">Theme</span>
@@ -177,7 +248,6 @@
     </dialog>
 
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-
     <script type="module" src="/src/app.js"></script>
   </body>
 </html>
