@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F4C95D" />
+    <meta name="description" content="Mote is a minimal, local-first Markdown note app." />
+    <link rel="icon" type="image/png" sizes="32x32" href="/branding/favicon/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/branding/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Mote - Markdown Notes</title>
+  </head>
+  <body>
+    <div id="app" class="app-shell" aria-busy="true">
+      <aside class="sidebar" aria-label="Collections">
+        <div class="brand-row">
+          <img class="brand-logo" src="/assets/branding/mote-logo.svg" alt="" width="34" height="34" />
+          <div>
+            <strong>Mote</strong>
+            <span>Markdown Note</span>
+          </div>
+        </div>
+
+        <nav class="collection-nav" aria-label="System collections">
+          <button class="nav-item is-active" data-collection="inbox"><span>Inbox</span><span class="count" data-count="inbox"></span></button>
+          <button class="nav-item" data-collection="favorites"><span>Favorites</span><span class="count" data-count="favorites"></span></button>
+          <button class="nav-item" data-collection="hidden"><span>Hidden</span><span class="count" data-count="hidden"></span></button>
+          <button class="nav-item" data-collection="trash"><span>Trash</span><span class="count" data-count="trash"></span></button>
+        </nav>
+
+        <div class="sidebar-section-heading">
+          <span data-i18n="groups">Groups</span>
+          <button id="add-group" class="icon-button" type="button" title="Add group" aria-label="Add group">+</button>
+        </div>
+        <div id="group-list" class="group-list"></div>
+
+        <div class="sidebar-footer">
+          <button id="open-settings" class="nav-item" type="button"><span data-i18n="settings">Settings</span></button>
+        </div>
+      </aside>
+
+      <section class="notes-pane" aria-label="Notes">
+        <header class="notes-header">
+          <div>
+            <p class="eyebrow" data-i18n="notes">Notes</p>
+            <h1 id="collection-title">Inbox</h1>
+          </div>
+          <button id="new-note" class="primary-icon-button" type="button" title="New note" aria-label="New note">+</button>
+        </header>
+        <label class="search-box">
+          <span class="sr-only" data-i18n="search">Search</span>
+          <input id="search-input" type="search" autocomplete="off" placeholder="Search notes..." />
+        </label>
+        <div id="note-list" class="note-list"></div>
+      </section>
+
+      <main class="editor-pane" aria-label="Editor">
+        <header class="editor-toolbar">
+          <button id="mobile-back" class="icon-button mobile-only" type="button" aria-label="Back">←</button>
+          <div id="format-toolbar" class="format-toolbar" aria-label="Markdown formatting">
+            <button type="button" data-format="bold" title="Bold"><strong>B</strong></button>
+            <button type="button" data-format="italic" title="Italic"><em>I</em></button>
+            <button type="button" data-format="underline" title="Underline"><u>U</u></button>
+            <button type="button" data-format="strike" title="Strikethrough"><s>S</s></button>
+            <button type="button" data-format="h1" title="Heading 1">H1</button>
+            <button type="button" data-format="h2" title="Heading 2">H2</button>
+            <button type="button" data-format="h3" title="Heading 3">H3</button>
+            <button type="button" data-format="h4" title="Heading 4">H4</button>
+            <button type="button" data-format="link" title="Link">Link</button>
+            <button type="button" data-format="quote" title="Quote">Quote</button>
+            <button type="button" data-format="inlineCode" title="Inline code">Code</button>
+            <button type="button" data-format="codeBlock" title="Code block">```</button>
+            <button type="button" data-format="bullet" title="Bullet list">• List</button>
+            <button type="button" data-format="numbered" title="Numbered list">1. List</button>
+            <button type="button" data-format="checkbox" title="Checkbox">☑</button>
+            <button type="button" data-format="table" title="Table">Table</button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <div class="view-toggle" role="group" aria-label="Editor view">
+            <button type="button" data-view="preview">Preview</button>
+            <button type="button" data-view="markdown">MD</button>
+          </div>
+          <button id="copy-note" class="icon-button" type="button" title="Copy Markdown" aria-label="Copy Markdown">Copy</button>
+          <button id="export-note" class="icon-button" type="button" title="Export Markdown" aria-label="Export Markdown">↓</button>
+        </header>
+
+        <div id="empty-editor" class="empty-editor">
+          <img src="/assets/branding/mote-logo.svg" alt="" width="68" height="68" />
+          <h2 data-i18n="noNoteSelected">No note selected</h2>
+          <p data-i18n="chooseOrCreate">Choose a note or create a new one.</p>
+        </div>
+
+        <section id="document-shell" class="document-shell" hidden>
+          <div class="document-main">
+            <div class="document-head">
+              <input id="note-title" class="note-title" type="text" autocomplete="off" placeholder="Untitled" />
+              <div class="document-meta-row">
+                <span id="save-status" class="save-status">Saved</span>
+                <div class="note-actions">
+                  <button id="favorite-note" type="button" class="text-button">☆</button>
+                  <select id="move-note" class="compact-select" aria-label="Move note"></select>
+                  <button id="hide-note" type="button" class="text-button" data-i18n="hide">Hide</button>
+                  <button id="restore-note" type="button" class="text-button" hidden data-i18n="restore">Restore</button>
+                  <button id="delete-note" type="button" class="text-button danger" data-i18n="delete">Delete</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="markdown-view" class="markdown-view" hidden>
+              <textarea id="markdown-editor" spellcheck="false" aria-label="Markdown editor" placeholder="# Start writing in Markdown…"></textarea>
+            </div>
+            <article id="preview-view" class="markdown-preview" aria-label="Markdown preview"></article>
+          </div>
+          <aside id="outline" class="outline" aria-label="Document outline" hidden>
+            <div class="outline-heading" data-i18n="outline">Outline</div>
+            <nav id="outline-list"></nav>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="group-dialog" class="modal">
+      <form method="dialog" id="group-form">
+        <h2 id="group-dialog-title">New group</h2>
+        <label>
+          <span data-i18n="groupName">Group name</span>
+          <input id="group-name" type="text" maxlength="80" required />
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" class="text-button" type="submit" data-i18n="cancel">Cancel</button>
+          <button value="default" class="primary-button" type="submit" data-i18n="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="settings-dialog" class="modal settings-modal">
+      <form method="dialog">
+        <div class="dialog-title-row">
+          <h2 data-i18n="settings">Settings</h2>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Close">×</button>
+        </div>
+
+        <label class="setting-row">
+          <span data-i18n="theme">Theme</span>
+          <select id="theme-setting">
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+
+        <label class="setting-row">
+          <span data-i18n="language">Language</span>
+          <select id="language-setting">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
+        <label class="setting-row checkbox-row">
+          <span data-i18n="showOutline">Show outline on desktop</span>
+          <input id="outline-setting" type="checkbox" />
+        </label>
+
+        <section class="settings-section">
+          <h3 data-i18n="data">Data</h3>
+          <p data-i18n="dataHelp">Your notes stay in this browser. Export a backup before clearing browser data or changing devices.</p>
+          <div class="settings-actions">
+            <button id="import-md" type="button" class="text-button" data-i18n="importMarkdown">Import .md</button>
+            <button id="export-backup" type="button" class="text-button" data-i18n="exportBackup">Export backup</button>
+            <button id="import-backup" type="button" class="text-button" data-i18n="importBackup">Import backup</button>
+          </div>
+          <input id="md-file-input" type="file" accept=".md,text/markdown,text/plain" multiple hidden />
+          <input id="backup-file-input" type="file" accept="application/json,.json" hidden />
+        </section>
+      </form>
+    </dialog>
+
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

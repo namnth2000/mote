@@ -1,62 +1,117 @@
-# Mote data portability
+# Mote - Data Portability
 
-Mote remains local-first. Import, backup and restore operate on files selected by the user and do not send data to a server.
+Mote is local-first. The user should be able to leave with their Markdown rather than depend on Mote's internal database format.
 
-## Import Markdown
+## 1. Individual Markdown
 
-Open Settings and use **Import .md files** to select one or more files. The file name, without `.md`, becomes the note title. The original UTF-8 Markdown becomes the note content. Choose Inbox or an existing group as the destination.
+### Export
 
-Duplicate titles are retained safely as `Title (2)`, `Title (3)`, and so on. A malformed file is reported as failed without cancelling valid files in the same selection. Unsupported files found during folder import are skipped.
-
-Use **Import folder** to import a Markdown directory. Mote maps the first folder below the selected root to a group:
+The current note can be downloaded as:
 
 ```text
-Notes/Work/project.md          -> Work / project
-Notes/Work/Client/brief.md     -> Work / brief
-Notes/root.md                  -> Inbox / root
+<note-title>.md
 ```
 
-Mote intentionally does not recreate arbitrary nested group trees because the current group model is flat.
+The exported content is the original Markdown source.
 
-### Platform limits
+### Import
 
-- Chrome and Edge web/PWA use the browser directory input API for folder import.
-- Single and multiple file import use the normal browser file picker.
-- Folder selection is not consistently available in mobile browsers. The action may return no files when the platform does not expose a directory picker.
-- Native desktop builds use the operating system directory picker.
+Mote accepts one or more `.md` files.
 
-## Full backup
+For each file:
 
-Use **Full backup** in Settings. This is separate from exporting an individual note. The downloaded ZIP is human-readable:
+- UTF-8 file content becomes `contentMarkdown`.
+- File name without `.md` becomes the note title.
+- Import into the currently selected group when a normal group is selected, otherwise Inbox.
+- Duplicate imported titles receive a safe suffix such as `(2)`.
 
-```text
-mote-backup-<timestamp>.zip
-  metadata.json
-  settings.json
-  notes/
-    <note-id>.md
-```
+Importing Markdown never replaces existing notes automatically.
 
-`metadata.json` starts with:
+## 2. Full backup
+
+The web rewrite uses a JSON backup rather than a database dump.
 
 ```json
 {
   "format": "mote-backup",
-  "version": 1,
-  "databaseSchemaVersion": 1
+  "version": 2,
+  "exportedAt": "2026-08-17T00:00:00.000Z",
+  "groups": [],
+  "notes": [],
+  "settings": {}
 }
 ```
 
-Version 1 preserves note IDs, titles, groups, relationships, favorite and hidden flags, trash timestamps, creation and update timestamps, Markdown content, and all persisted settings. Mote does not currently have a separate archive state.
+Version `2` identifies the web rewrite backup format. It is not the IndexedDB schema version.
 
-## Full restore
+The backup preserves group IDs and names, note IDs, group relationships, title, Markdown source, favorite/hidden state, Trash timestamp, creation/update timestamps and supported settings.
 
-Use **Full restore** and select a Mote backup ZIP. Mote first decodes and validates the complete archive, including its format/version, JSON structure, IDs, relationships, timestamps, and every referenced Markdown payload. Current data is not touched during validation.
+## 3. Full restore
 
-After validation, Mote shows the note and group counts and asks for destructive confirmation. The database replacement runs in one Drift transaction. If any write fails, SQLite rolls the transaction back instead of leaving a partial restore.
+Restore is destructive because it replaces the current Mote library.
 
-Backups with malformed ZIP data, missing metadata/settings, missing note files, unsafe paths, invalid Unicode, duplicate IDs, broken group relationships, or unsupported versions are rejected.
+Required flow:
 
-## Versioning
+1. Read the selected JSON file.
+2. Validate `format` and supported `version`.
+3. Validate top-level groups, notes and settings shapes.
+4. Confirm with the user that current data will be replaced.
+5. Replace all persisted stores in one IndexedDB transaction.
+6. Reload Mote state.
 
-Backup format changes require a new `version` and an explicit reader/migration path. Never silently reinterpret a newer backup. Database schema changes require an ordered Drift migration and must preserve Markdown source content.
+If parsing or validation fails, current IndexedDB data must not be modified.
+
+## 4. Migrating from `mote-old`
+
+The Flutter implementation and the web rewrite use different storage engines.
+
+Old Flutter web:
+
+```text
+Drift + SQLite/WASM
+Database name: mote
+```
+
+New web rewrite:
+
+```text
+Native IndexedDB
+Database name: mote-web-v2
+```
+
+Mote 2 does not automatically read or mutate the old Drift database.
+
+### Recommended migration before replacing production
+
+While the old app is still live:
+
+1. Open `mote.namnth.com` on each browser/device containing important local notes.
+2. Use the old Mote export/backup feature.
+3. Keep the full old backup file as an archive.
+4. For notes that must be imported immediately into Mote 2, export them as `.md` files where practical.
+5. Deploy Mote 2.
+6. Import the `.md` files into the new app.
+7. Create a new Mote 2 JSON backup after verifying the imported notes.
+
+Do not clear browser site data until the migration has been verified.
+
+### Why not silently migrate browser storage?
+
+The old database is a SQLite/Drift database running through browser-specific storage. Directly rewriting it during a new deployment increases the chance of accidental data loss and ties the new architecture to the old implementation.
+
+If preserving old group/favorite/hidden metadata becomes important for many users, build an explicit one-time importer for the old backup format as a separate migration task. Do not make that compatibility code part of the normal editor path.
+
+## 5. Browser data warning
+
+Local-first means local browser storage can be removed by clearing site data, browser cleanup policies, resetting a browser profile, changing device or using private/incognito sessions.
+
+Users with important notes should export backups periodically.
+
+## 6. Versioning rule
+
+A future breaking backup change must:
+
+1. increase `version`
+2. keep an explicit reader/migration path for supported older formats
+3. reject unknown newer versions instead of guessing
+4. preserve Markdown source exactly

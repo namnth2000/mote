@@ -1,379 +1,277 @@
 # Mote - Architecture Design
 
-> Flutter single-codebase, local-first, Markdown-first.
+> Web-first, local-first, Markdown-first.
 
-## 1. Mục tiêu kiến trúc
+## 1. Architecture goal
 
-- Một codebase cho Web, Windows, Android và iOS.
-- UI, business logic, data model và Markdown engine dùng chung tối đa.
-- Markdown là source of truth của note.
-- MVP chạy hoàn toàn local, không cần account hoặc backend.
-- Chỉ tách theo platform ở filesystem, clipboard, export, share và Mermaid renderer khi cần.
-- Kiến trúc đủ rõ để AI triển khai nhưng không dùng Clean Architecture quá nặng.
+Mote should be small enough to understand without a framework-specific architecture diagram.
 
-## 2. Kiến trúc tổng thể
+The web MVP uses:
+
+```text
+HTML + CSS + Vanilla JavaScript
+            ↓
+Native browser APIs
+            ↓
+IndexedDB
+```
+
+Vite is a build tool only. It is not the application framework.
+
+## 2. High-level architecture
 
 ```mermaid
 flowchart TD
-    UI[Flutter UI] --> F[Feature Logic / Riverpod]
-    F --> R[Repositories]
-    R --> DB[Drift Database]
-    F --> M[Markdown Engine]
-    F --> P[Platform Services]
-    M --> MR[Markdown Renderer]
-    M --> CD[Code Highlight]
-    M --> MM[Mermaid Renderer]
-    P --> FS[File System / Web Storage]
-    P --> CB[Clipboard]
-    P --> EX[Export]
+    UI[HTML / CSS UI] --> APP[app.js]
+    APP --> EDIT[format.js]
+    APP --> DB[db.js]
+    APP --> MD[markdown.js]
+    EDIT --> TA[Native textarea]
+    DB --> IDB[IndexedDB]
+    MD --> PARSE[Marked]
+    PARSE --> SAFE[DOMPurify]
+    SAFE --> PREVIEW[Preview DOM]
+    PREVIEW --> CODE[highlight.js]
+    PREVIEW --> MERMAID[Mermaid]
+    SW[Service Worker] --> CACHE[App shell cache]
 ```
 
-## 3. Layer đơn giản
+## 3. Source of truth
 
-### UI
-
-Chịu trách nhiệm:
-
-- Layout Desktop / Mobile.
-- Editor toolbar.
-- Text View / Markdown View.
-- Scrollspy.
-- Dialog, menu, settings.
-- Theme và localization.
-
-UI không truy cập database trực tiếp.
-
-### Feature Logic
-
-Riverpod providers/controllers xử lý:
-
-- Note CRUD.
-- Group CRUD.
-- Search.
-- Trash / Restore / Permanent Delete.
-- Hidden.
-- Auto Save.
-- Settings.
-- Export flow.
-
-### Repository
-
-Cung cấp interface ổn định giữa feature logic và storage.
+Each note stores:
 
 ```text
-NoteRepository
-GroupRepository
-SettingsRepository
-AssetRepository
+contentMarkdown: string
 ```
 
-### Core Services
+No rendered HTML is persisted. No rich-text tree is persisted. Preview can always be regenerated from Markdown source.
+
+## 4. Editor architecture
+
+### Markdown mode
+
+Use a normal `<textarea>`.
+
+Do not implement a custom text renderer for the editing surface.
+
+Formatting flow:
 
 ```text
-MarkdownService
-SearchService
-AutoSaveService
-FileService
-ClipboardService
-ExportService
-MermaidRenderer
+textarea.value
++ selectionStart
++ selectionEnd
+      ↓
+formatSelection()
+      ↓
+new string + new selection
+      ↓
+textarea.value
 ```
 
-## 4. Folder Structure
+`format.js` contains pure Markdown string transforms wherever possible so editor behavior can be tested without DOM rendering.
+
+### Why no custom scroll/caret mapping?
+
+Markdown mode and Preview are intentionally independent views of the same source.
+
+Switching views does not need to reproduce an exact rendered pixel position. Avoid coupling selection/caret state to Markdown parser block positions.
+
+This removes a large class of bugs around caret reveal, selection jumps, mobile keyboard resizing, code block selection and view-switch scroll restoration.
+
+### Preview mode
+
+Preview is read-only rendered DOM.
 
 ```text
-lib/
-├── app/
-│   ├── app.dart
-│   ├── router.dart
-│   ├── localization/
-│   └── theme/
-│
-├── core/
-│   ├── database/
-│   ├── markdown/
-│   ├── platform/
-│   ├── export/
-│   └── utils/
-│
-├── features/
-│   ├── notes/
-│   │   ├── data/
-│   │   ├── logic/
-│   │   └── ui/
-│   ├── groups/
-│   ├── editor/
-│   ├── search/
-│   ├── trash/
-│   ├── hidden/
-│   └── settings/
-│
-├── shared/
-│   └── widgets/
-│
-└── main.dart
+Markdown string
+    ↓
+Marked
+    ↓
+DOMPurify
+    ↓
+Preview DOM
+    ├── highlight.js for code
+    ├── Mermaid for mermaid blocks
+    └── heading IDs for outline
 ```
 
-Không tạo thêm domain/usecase/entity layer cho từng thao tác nếu chưa có nhu cầu thật.
+External links receive safe `rel` attributes. Mermaid uses strict security settings.
 
-## 5. Data Flow chính
-
-### Mở note
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant UI as Editor UI
-    participant C as Note Controller
-    participant R as Note Repository
-    participant D as Drift DB
-
-    U->>UI: Chọn note
-    UI->>C: openNote(id)
-    C->>R: getNote(id)
-    R->>D: SELECT
-    D-->>R: Note
-    R-->>C: Note
-    C-->>UI: Render note
-```
-
-### Auto Save
+## 5. Application modules
 
 ```text
-Typing
-  -> Editor state thay đổi
-  -> Debounce 300-600 ms
-  -> NoteController.save()
-  -> NoteRepository.update()
-  -> Drift transaction
+src/
+├── app.js       UI state, events, feature orchestration
+├── db.js        IndexedDB persistence and backup transactions
+├── format.js    Pure Markdown selection transforms
+├── markdown.js  Markdown render pipeline
+└── styles.css   Product styling and responsive layout
 ```
 
-Khi app mất focus hoặc route thay đổi, flush pending save nếu platform cho phép.
+Keep this structure until a file becomes hard to reason about. Do not pre-create domain/usecase/controller layers just to imitate a larger application architecture.
 
-### Markdown render
+## 6. State model
+
+Transient UI state lives in memory:
 
 ```text
-contentMarkdown
-      |
-      +-> Markdown View: raw text
-      |
-      +-> Markdown Parser
-              +-> Text
-              +-> Table
-              +-> Code Block
-              +-> Mermaid
-              +-> Heading metadata -> Scrollspy
+current collection
+current note ID
+search text
+save status/revision
+current headings
+open dialogs
 ```
 
-Không lưu HTML hoặc rich-text document song song.
-
-## 6. Editor Architecture
-
-Editor có một document model duy nhất:
+Persisted state lives in IndexedDB:
 
 ```text
-String contentMarkdown
+groups
+notes
+settings
 ```
 
-Toolbar chỉ sửa Markdown source.
+Do not persist derived data such as rendered HTML, current search results or collection counts.
 
-Ví dụ:
+## 7. Auto save
 
 ```text
-Select: hello
-Click Bold
-Result: **hello**
+input
+  ↓
+update in-memory note
+  ↓
+mark Saving
+  ↓
+~450 ms debounce
+  ↓
+IndexedDB put
+  ↓
+mark Saved
 ```
 
-Hai view:
+Pending changes are also flushed when the page becomes hidden and before relevant navigation/mutations where possible.
 
-- `MarkdownView`: raw Markdown editor.
-- `TextView`: render nội dung để đọc/chỉnh sửa thuận tiện.
+The UI must never report `Saved` before the corresponding IndexedDB write completes.
 
-Nếu Text View cần editor richer sau MVP, vẫn phải map về Markdown source thay vì tạo format riêng.
+## 8. Database
 
-## 7. Scrollspy
+Use native IndexedDB directly.
 
-Markdown parser trả thêm:
+The database is named:
 
 ```text
-HeadingNode
-- id
-- level
-- text
-- sourceOffset
+mote-web-v2
 ```
 
-Desktop:
+This intentionally does not reuse the old Flutter Drift database namespace.
+
+See `Database_Design.md`.
+
+## 9. PWA architecture
+
+The PWA consists of:
+
+- `manifest.webmanifest`
+- `sw.js`
+- icons/branding assets
+
+The service worker caches the application shell and same-origin static assets for resilience.
+
+IndexedDB note data is independent from the service worker cache. A service worker update must never delete application data.
+
+## 10. Security and privacy
+
+### Rendered Markdown
+
+Raw Markdown must not be inserted into the DOM as trusted HTML. Render flow uses sanitization before the result is attached to Preview.
+
+### Mermaid
+
+Use strict Mermaid security settings. If rendering fails, keep the Markdown source unchanged and show a non-destructive fallback/error state.
+
+### External content
+
+Remote Markdown images and links may cause the browser to contact external origins when the user opens Preview. Mote itself does not upload note content to a server.
+
+### Local-first
+
+Do not log raw note content to remote analytics or crash reporting.
+
+## 11. Responsive layout
+
+### Desktop
 
 ```text
-Editor ScrollController
-       -> xác định heading gần viewport nhất
-       -> activeHeadingId
-       -> Scrollspy highlight
+┌─────────────┬──────────────┬──────────────────────────┬───────────┐
+│ Collections │ Notes        │ Editor / Preview         │ Outline   │
+└─────────────┴──────────────┴──────────────────────────┴───────────┘
 ```
-
-Click outline:
-
-```text
-headingId -> GlobalKey / offset -> scrollTo()
-```
-
-Mobile không render Scrollspy cố định.
-
-## 8. Mermaid
-
-Tạo abstraction:
-
-```dart
-abstract interface class MermaidRenderer {
-  Future<RenderedDiagram> render(String source);
-}
-```
-
-Implementation có thể khác theo platform:
-
-```text
-WebMermaidRenderer
-NativeMermaidRenderer
-```
-
-Nếu Flutter package không ổn định, native có thể dùng Mermaid.js qua WebView adapter. Phần editor không được phụ thuộc vào implementation này.
-
-- Ưu tiên giải pháp chạy ổn định trên Web.
-- Có fallback hiển thị source nếu render thất bại.
-- Không dành quá nhiều thời gian hoàn thiện Mermaid native trong giai đoạn này.
-
-## 9. Platform Abstraction
-
-```text
-FileService
-├── WebFileService
-└── NativeFileService
-
-ClipboardService
-├── WebClipboardService
-└── NativeClipboardService
-
-ExportService
-├── WebExportService
-└── NativeExportService
-```
-
-Platform detection chỉ nằm trong composition/bootstrap, không rải `if (web)` khắp feature code.
-
-## 10. State Management
-
-Dùng Riverpod.
-
-Provider chính:
-
-```text
-currentNoteProvider
-notesProvider(groupId)
-groupsProvider
-searchProvider
-editorProvider
-settingsProvider
-trashProvider
-hiddenProvider
-```
-
-State tạm của UI như menu đang mở có thể dùng local widget state, không đưa tất cả vào global provider.
-
-## 11. Navigation
-
-### Desktop/Web
-
-```text
-/
-/note/:id
-/group/:id
-/trash
-/settings
-/settings/hidden
-```
-
-Search và Export ưu tiên dialog/sheet, không cần route riêng.
 
 ### Mobile
 
-Dùng cùng route nhưng layout chuyển thành:
+Use list -> editor navigation within the same page shell.
 
-```text
-Notes List -> Editor
-```
+The editor toolbar remains horizontally scrollable rather than wrapping into multiple rows. Native textarea behavior remains the priority when the on-screen keyboard is open.
 
-Back trả về list thay vì sidebar cố định.
+## 12. Error handling
 
-## 12. Error Handling
-
-Phân loại đơn giản:
-
-```text
-StorageException
-MarkdownRenderException
-ExportException
-AssetException
-```
-
-Nguyên tắc:
-
-- Save lỗi: giữ content trong memory, báo trạng thái chưa lưu.
-- Mermaid lỗi: hiện source + thông báo render lỗi, không làm crash note.
-- Image lỗi: placeholder, không làm mất Markdown path.
-- Export lỗi: báo lỗi, không sửa dữ liệu gốc.
+- database open/write failure -> visible message, do not pretend data is saved
+- Markdown render failure -> preserve source, show failure state
+- Mermaid failure -> preserve source, show source/error fallback
+- backup validation failure -> do not modify current database
+- file import failure -> skip/report the affected file without destroying existing data
 
 ## 13. Performance
 
-MVP chỉ cần:
+MVP optimizations:
 
-- Debounce auto-save.
-- Lazy load note list khi cần.
-- Không parse lại toàn bộ Markdown nếu content không đổi.
-- Cache Mermaid render theo hash của source.
-- Search database thay vì load toàn bộ library vào memory.
+- debounce writes
+- render Preview only when needed or content changed
+- avoid storing rendered HTML
+- query small local datasets in memory after IndexedDB load
+- avoid heavyweight editor abstractions
 
-Chưa cần isolate, background indexing hoặc complex cache trước khi đo thấy vấn đề.
+Do not add workers, virtualized lists, full-text indexes or caching layers without measured need.
 
-## 14. Security / Privacy
+## 14. Testing strategy
 
-MVP local-first:
+### Automated
 
-- Không upload note ra server.
-- Không analytics nội dung note.
-- Không log raw note content.
-- Hidden chỉ là ẩn khỏi UI, không được quảng bá là encryption.
+At minimum test pure editor transformations for:
 
-Nếu sau này có App Lock hoặc encryption, thiết kế riêng và cập nhật spec.
+- bold/italic wrappers
+- links
+- inline code
+- fenced code blocks
+- multi-line list operations
+- collapsed and non-collapsed selections
 
-## 15. Test Strategy
-
-### Unit
-
-- Note / Group CRUD.
-- Trash 30 ngày.
-- Search.
-- Auto Save debounce.
-- Markdown parser extension.
-- Heading extraction.
-
-### Widget
-
-- Editor toolbar.
-- Text / Markdown switch.
-- Scrollspy.
-- Theme / localization.
+Run JavaScript syntax checks for application modules.
 
 ### Manual
 
-- Chrome.
-- Windows.
-- Android.
-- iPhone.
+Production editor smoke tests should cover:
 
-## 16. Nguyên tắc triển khai
+- Chrome/Edge desktop
+- Safari/iPhone
+- Chrome/Android when available
+- text selection
+- double click/double tap
+- copy/paste
+- undo/redo
+- code block editing
+- link editing
+- mobile keyboard
+- theme and PWA behavior
 
-> Shared by default, platform-specific only when necessary.
+## 15. Decision rule for future complexity
 
-Không làm Web, Windows, Android và iOS song song. Hoàn thiện Web MVP trước, sau đó reuse architecture cho các target còn lại.
+Add a new abstraction only when the current implementation has a demonstrated limitation.
+
+Examples:
+
+- adopt CodeMirror only if native textarea limitations become a real user problem
+- adopt Capacitor only if native APIs/store distribution become necessary
+- add a backend only if sync/account features are validated
+
+Do not introduce these layers in anticipation of hypothetical requirements.

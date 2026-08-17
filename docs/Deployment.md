@@ -1,862 +1,211 @@
 # Mote - Deployment Guide
 
-> Mục tiêu: deploy Mote theo thứ tự đơn giản, ít chi phí và chỉ trả tiền cho store khi thật sự cần.
+> Target: `https://mote.namnth.com`
 
-## 1. Deployment Strategy
+Mote 2 is a static Vite-built PWA. Cloudflare Pages only needs to build the repository and publish `dist/`.
 
-```text
-Web / PWA
-↓
-Windows
-↓
-Android APK
-↓
-Google Play
-↓
-iOS App Store
-```
-
-Nguyên tắc:
-
-- Launch Web trước để validation.
-- Không mua tài khoản store ngay từ đầu.
-- Windows và Android có thể phát hành trực tiếp từ website.
-- iOS giai đoạn đầu dùng Web/PWA.
-- Chỉ phát hành native iOS khi đã có người dùng thật.
-
-
-# 2. Deploy Web MVP lên Cloudflare Pages
-
-## 2.1. Mục tiêu production
-
-Production URL của Mote:
-
-```text
-https://mote.namnth.com
-```
-
-Mote được host tại root của domain này, vì vậy mọi production build phải dùng:
-
-```text
---base-href /
-```
-
-Không dùng `--base-href /mote/`. Giá trị `/mote/` chỉ phù hợp khi deploy vào
-subpath như `username.github.io/mote/`.
-
-## 2.2. Phân biệt hai thư mục `web` và `build/web`
-
-```text
-web/        Source template, manifest, favicon và SQLite Web asset.
-build/web/  Website đã compile, sẵn sàng upload lên hosting.
-```
-
-Cloudflare Pages phải nhận **nội dung của `build/web/`**, không phải thư mục
-`web/` ở root project.
-
-Sau một build hợp lệ, `build/web/` cần có ít nhất:
-
-```text
-index.html
-main.dart.js
-flutter_bootstrap.js
-flutter_service_worker.js
-manifest.json
-sqlite3.wasm
-drift_worker.dart.js
-assets/
-icons/
-```
-
-## 2.3. Lệnh build production
-
-Chạy từ root repository:
+## 1. Production build
 
 ```bash
-flutter clean
-flutter pub get
-dart format --output=none --set-exit-if-changed .
-flutter analyze
-flutter test
-flutter build web --release --base-href /
+npm install
+npm run check
+npm test
+npm run build
 ```
 
-Nếu chỉ cần build nhanh sau khi code đã được kiểm tra:
-
-```bash
-flutter pub get
-flutter build web --release --base-href /
-```
-
-Output cần deploy:
+Production output:
 
 ```text
-build/web/
+dist/
 ```
 
-Có thể kiểm tra local trước khi upload:
+The build copies the PWA service worker, manifest and branding assets into the production output.
 
-```bash
-python -m http.server 8080 --directory build/web
-```
+## 2. Cloudflare Pages build settings
 
-Sau đó mở:
+Use:
 
 ```text
-http://localhost:8080
-```
-
-## 2.4. Chọn cách deploy
-
-| Cách | Phù hợp khi | Khuyến nghị |
-| --- | --- | --- |
-| Manual Direct Upload | Muốn đưa MVP lên nhanh từ máy local | Tốt cho lần deploy đầu |
-| GitHub Actions + Wrangler | Muốn tự build, test và deploy khi push `main` | **Khuyến nghị cho Mote** |
-| Cloudflare Git Integration | Muốn Cloudflare tự build repository | Dùng được, nhưng Flutter SDK phải được cài trong build |
-
-Cloudflare không cho chuyển một Pages project đã tạo bằng Direct Upload sang
-Git Integration, và cũng không cho chuyển project Git Integration sang Direct
-Upload. Tuy nhiên, project Direct Upload vẫn có thể nhận deployment tự động từ
-GitHub Actions qua Wrangler.
-
-## 2.5. Cách A - Manual Direct Upload
-
-### Bước 1 - Build trên máy local
-
-```bash
-flutter build web --release --base-href /
-```
-
-### Bước 2 - Tạo Pages project
-
-1. Mở Cloudflare Dashboard.
-2. Chọn **Workers & Pages**.
-3. Chọn **Create application**.
-4. Chọn **Pages** rồi chọn **Drag and drop your files**.
-5. Đặt tên project, ví dụ `mote`.
-6. Kéo nguyên thư mục `build/web` vào vùng upload.
-7. Chọn **Deploy site**.
-
-Nếu upload file ZIP, hãy ZIP **nội dung bên trong** `build/web`, để
-`index.html` nằm ở root của ZIP. Không tạo cấu trúc `web/index.html` bên trong
-ZIP.
-
-### Bước 3 - Các lần deploy tiếp theo
-
-1. Build lại `build/web`.
-2. Mở Pages project trong Cloudflare.
-3. Chọn **Create deployment**.
-4. Upload lại toàn bộ `build/web`.
-
-Không copy riêng `main.dart.js`, vì Flutter build còn phụ thuộc service worker,
-asset manifest, SQLite WASM, Drift worker và các file version đi kèm.
-
-## 2.6. Cách B - GitHub Actions build và deploy bằng Wrangler
-
-Đây là cách khuyến nghị. GitHub Actions cài đúng Flutter version, chạy test,
-build `build/web`, sau đó Wrangler upload output lên Cloudflare Pages.
-
-### Bước 1 - Tạo Cloudflare Pages project
-
-Tạo project `mote` bằng Direct Upload như phần 2.5 và deploy một lần, hoặc tạo
-project bằng Wrangler:
-
-```bash
-npx wrangler login
-npx wrangler pages project create mote
-```
-
-`mote` ở đây là **Pages project name**, không phải custom domain. Nếu project
-thực tế có tên khác, thay `mote` trong workflow bên dưới.
-
-### Bước 2 - Tạo API token
-
-Trong Cloudflare Dashboard:
-
-1. Mở **My Profile > API Tokens**.
-2. Chọn **Create Token**.
-3. Cấp quyền Cloudflare Pages Edit cho account chứa Pages project.
-4. Lưu token ngay khi Cloudflare hiển thị.
-5. Lấy Account ID trong Cloudflare Dashboard.
-
-Không commit API token hoặc Account ID trực tiếp vào workflow.
-
-### Bước 3 - Thêm GitHub Actions secrets
-
-Trong GitHub repository `namnth2000/mote`:
-
-```text
-Settings
-> Secrets and variables
-> Actions
-> New repository secret
-```
-
-Tạo hai secret:
-
-```text
-CLOUDFLARE_API_TOKEN
-CLOUDFLARE_ACCOUNT_ID
-```
-
-### Bước 4 - Tạo workflow
-
-Tạo file:
-
-```text
-.github/workflows/deploy-cloudflare-pages.yml
-```
-
-Nội dung:
-
-```yaml
-name: Deploy Mote to Cloudflare Pages
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  deployments: write
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.29.3"
-          channel: stable
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
-      - name: Build Web release
-        run: flutter build web --release --base-href /
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build/web --project-name=mote --branch=main
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-```
-
-Workflow chạy tự động khi push vào `main`. Có thể chạy thủ công tại GitHub:
-
-```text
-Actions > Deploy Mote to Cloudflare Pages > Run workflow
-```
-
-Nếu workflow báo không tìm thấy Pages project, kiểm tra lại giá trị
-`--project-name=mote` và Cloudflare account chứa project.
-
-## 2.7. Cách C - Cloudflare Git Integration và Build Command
-
-### Có dùng được không?
-
-Có, nhưng Cloudflare Pages build image không cài sẵn Flutter SDK. Build command
-phải tải đúng Flutter SDK trước khi chạy `flutter build`. Điều này làm build đầu
-tiên chậm hơn và phụ thuộc vào việc tải Flutter từ GitHub.
-
-Với Mote, GitHub Actions ở phần 2.6 ổn định và dễ debug hơn. Chỉ dùng cách này
-khi muốn toàn bộ CI chạy trong Cloudflare.
-
-### Cấu hình Git Integration
-
-1. Mở **Workers & Pages > Create application > Pages**.
-2. Chọn **Connect to Git**.
-3. Chọn GitHub và repository `namnth2000/mote`.
-4. Chọn production branch `main`.
-5. Cấu hình build như sau:
-
-```text
+Production branch: main
 Framework preset: None
-Root directory: để trống, mặc định là repository root
-Build output directory: build/web
+Build command: npm run build
+Build output directory: dist
+Root directory: repository root
 ```
 
-Build command:
+No environment variables are required by the current Mote MVP.
 
-```bash
-if [ ! -d "$HOME/flutter" ]; then git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.29.3 "$HOME/flutter"; fi && export PATH="$HOME/flutter/bin:$PATH" && flutter config --enable-web && flutter pub get && flutter analyze && flutter test && flutter build web --release --base-href /
-```
+## 3. Migrating the existing Pages project after the GitHub repo rename
 
-Các file bắt buộc cho Drift Web phải được commit vào Git:
+The old GitHub repository was renamed to:
 
 ```text
-lib/core/database/app_database.g.dart
-web/sqlite3.wasm
-web/drift_worker.dart.js
+namnth2000/mote-old
 ```
 
-Không commit `build/web`. Cloudflare sẽ tạo thư mục này sau khi build.
-
-Nếu build timeout hoặc tải Flutter SDK không ổn định, chuyển sang GitHub Actions
-+ Wrangler ở phần 2.6. Vì Pages project Git Integration không thể đổi sang Direct
-Upload, hãy tạo Pages project mới nếu muốn đổi mô hình hoàn toàn.
-
-## 2.8. Gắn custom domain `mote.namnth.com`
-
-Thực hiện sau khi Pages project đã có ít nhất một deployment thành công:
-
-1. Mở **Workers & Pages**.
-2. Chọn Pages project của Mote.
-3. Chọn **Custom domains**.
-4. Chọn **Set up a custom domain**.
-5. Nhập `mote.namnth.com`.
-6. Chọn **Continue** rồi **Activate domain**.
-
-Nếu zone `namnth.com` đang được quản lý trong cùng Cloudflare account,
-Cloudflare thường tự tạo DNS record cần thiết. Kiểm tra lại tại **DNS > Records**:
+A new repository now exists at:
 
 ```text
-Type: CNAME
-Name: mote
-Target: <pages-project>.pages.dev
-Proxy status: Proxied
+namnth2000/mote
 ```
 
-Nếu DNS được quản lý ở nơi khác, tạo CNAME tương tự tại DNS provider. Luôn thêm
-custom domain trong Pages dashboard trước, không chỉ tự tạo CNAME, để Cloudflare
-cấp certificate và liên kết hostname đúng với Pages project.
+Treat this as a source-repository migration, not just a normal code update.
 
-Chờ trạng thái custom domain chuyển sang **Active**, sau đó kiểm tra:
+### Step 0 - Back up Mote data first
+
+Before changing the production deployment:
+
+1. Open the currently deployed Flutter Mote on every browser/device containing important notes.
+2. Export a full backup.
+3. Export important notes as `.md` files when practical.
+4. Keep these files outside browser storage.
+
+The new app uses a separate `mote-web-v2` IndexedDB database, but backing up first is still mandatory before production replacement.
+
+## 4. Safest rollout
+
+### Phase A - Test the new repo independently
+
+Before moving `mote.namnth.com`, create a temporary Cloudflare Pages project connected to `namnth2000/mote`.
+
+Suggested temporary project name:
 
 ```text
-https://mote.namnth.com
+mote-v2-preview
 ```
 
-## 2.9. PWA và manifest
-
-File nguồn:
+Settings:
 
 ```text
-web/manifest.json
+Branch: implementation branch first, then main after merge
+Build command: npm run build
+Output: dist
 ```
 
-Vì Mote chạy tại root của `mote.namnth.com`, cấu hình phù hợp là:
+Use the generated `*.pages.dev` URL for smoke testing.
+
+This avoids changing the current production source while the rewrite is still unverified.
+
+### Phase B - Point production at the new repository
+
+After the preview deployment passes testing, update the existing production Pages project's Git source from the old GitHub repository to the new repository if your Cloudflare dashboard exposes that source change.
+
+Then verify:
+
+```text
+Repository: namnth2000/mote
+Production branch: main
+Build command: npm run build
+Output directory: dist
+```
+
+If the dashboard only lets you manage GitHub access but not replace the repository source, use the Cloudflare Pages API or create a replacement Pages project and move the custom domain after validation.
+
+### API fallback
+
+Cloudflare's Pages project update API can update project source/build configuration. Use an API token with Pages write permission.
+
+Conceptually update:
 
 ```json
 {
-  "name": "Mote - Markdown Notes",
-  "short_name": "Mote",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#FAFAF8",
-  "theme_color": "#F4C95D"
+  "production_branch": "main",
+  "build_config": {
+    "build_command": "npm run build",
+    "destination_dir": "dist",
+    "root_dir": ""
+  },
+  "source": {
+    "type": "github",
+    "config": {
+      "owner": "namnth2000",
+      "repo_name": "mote",
+      "repo_id": "1337080866",
+      "production_branch": "main"
+    }
+  }
 }
 ```
 
-Sau mỗi deployment lớn, nếu browser vẫn hiển thị bản cũ, đóng toàn bộ tab Mote
-rồi mở lại hoặc clear site data/service worker trước khi kết luận deployment lỗi.
+Do not place Cloudflare API tokens in the repository. The Cloudflare GitHub App must have access to the new repository before the source update can build it.
 
-## 2.10. Production smoke test
+## 5. Custom domain
 
-Sau mỗi deployment, kiểm tra trực tiếp trên `https://mote.namnth.com`:
+If you keep the existing Pages project, `mote.namnth.com` should remain attached while only the Git source/build settings change.
 
-- Trang mở không trắng và không có lỗi console.
-- Logo, icon và font tải thành công.
-- Tạo note, sửa note và reload không mất dữ liệu.
-- Search, Trash, Restore và Hidden hoạt động.
-- Markdown, table, code block và Mermaid render đúng.
-- Copy và bốn lựa chọn export hoạt động.
-- Light/Dark và VI/EN persist qua reload.
-- Desktop và Mobile Web không bị horizontal overflow.
-- PWA có thể Add to Home Screen trên thiết bị hỗ trợ.
+If you create a replacement production Pages project instead:
 
-## 2.11. Tài liệu tham khảo
+1. Verify its `pages.dev` deployment first.
+2. Remove `mote.namnth.com` from the old Pages project when ready to cut over.
+3. Add `mote.namnth.com` to the replacement project.
+4. Confirm certificate/DNS status becomes active.
+5. Smoke test the custom domain.
+6. Keep the old project available temporarily until checks are complete.
 
-- Cloudflare Pages Direct Upload:
-  https://developers.cloudflare.com/pages/get-started/direct-upload/
-- Cloudflare Pages Git Integration:
-  https://developers.cloudflare.com/pages/configuration/git-integration/
-- Cloudflare Pages build configuration:
-  https://developers.cloudflare.com/pages/configuration/build-configuration/
-- Cloudflare Pages custom domains:
-  https://developers.cloudflare.com/pages/configuration/custom-domains/
-- Cloudflare Wrangler Action:
-  https://github.com/cloudflare/wrangler-action
+Avoid deleting the old project before the new project is verified.
 
+## 6. Service worker update behavior
 
-# 3. Windows
+A stale service worker can make a successful deployment look old.
 
-## Build
+After a major production cutover:
 
-Trên Windows:
+- reload the page
+- close/reopen installed PWA windows
+- if necessary, verify the active service worker and caches in DevTools
 
-```bash
-flutter clean
-flutter pub get
-flutter build windows --release
-```
+Do not clear site data as the first troubleshooting step because Mote stores notes locally in browser storage.
 
-Output thường nằm trong:
+## 7. Production smoke test
 
-```text
-build/windows/x64/runner/Release/
-```
+### App shell
 
-## Package
+- App loads without console errors.
+- Inter font and logo load.
+- Light/Dark/System theme works.
+- VI/EN setting persists.
+- Mobile layout has no unwanted horizontal overflow.
 
-Có 2 lựa chọn:
+### Storage
 
-### Portable
+- Create a note, edit it and reload.
+- Create/rename/delete a group.
+- Move a note between Inbox and a group.
+- Export a full Mote 2 backup.
 
-Zip toàn bộ thư mục release:
+### Editor
 
-```text
-Mote-Windows-x64.zip
-```
+Test with normal text, a link and a fenced code block:
 
-Người dùng tải về, giải nén và chạy.
+- click/tap caret placement
+- drag selection
+- double-click/double-tap selection where supported
+- copy/paste
+- undo/redo
+- Bold/Italic selection
+- Link formatting
+- code block selection/editing
+- Preview / MD switching
+- mobile keyboard open/close and scrolling
 
-### Installer
+### Preview
 
-Tạo installer:
+Test headings, lists, link, blockquote, table, code block, Mermaid and desktop outline.
 
-```text
-MoteSetup.exe
-```
+### PWA
 
-Có thể dùng tool đóng gói Windows phù hợp ở bước sau.
+- manifest loads
+- app can be installed where browser support exists
+- installed app launches at `/`
+- basic shell can reopen after assets have been cached
 
-MVP có thể bắt đầu bằng bản portable để giảm công việc.
+## 8. Rollback
 
-## Distribution
+If a critical production issue appears:
 
-Upload release lên:
+1. Do not clear local site data.
+2. Roll production back to the previous known-good Pages deployment when possible.
+3. Keep user backup files unchanged.
+4. Fix the issue on a branch and re-run preview smoke tests.
 
-```text
-GitHub Releases
-```
-
-Sau đó trên website:
-
-```text
-mote.namnth.com/download
-```
-
-có nút:
-
-```text
-Download for Windows
-```
-
-## Version
-
-Đặt tên file rõ ràng:
-
-```text
-Mote-1.0.0-Windows-x64.zip
-```
-
-## Test
-
-Kiểm tra:
-
-- Windows 11
-- Create/Edit/Delete note
-- Local database
-- Restart app không mất dữ liệu
-- Image paste/drag-drop
-- Export Markdown
-- Scrollspy
-- Dark mode
-
-## Chi phí
-
-```text
-0 đồng
-```
-
-nếu phát hành trực tiếp qua GitHub Releases hoặc website.
-
-# 4. Android APK
-
-## Build
-
-```bash
-flutter clean
-flutter pub get
-flutter build apk --release
-```
-
-Output:
-
-```text
-build/app/outputs/flutter-apk/app-release.apk
-```
-
-Đổi tên:
-
-```text
-Mote-1.0.0-Android.apk
-```
-
-## Signing
-
-Trước khi phát hành public, tạo Android signing key và cấu hình release signing.
-
-Không commit:
-
-```text
-keystore
-password
-key.properties
-```
-
-vào public repository.
-
-Dùng `.gitignore`.
-
-## Distribution
-
-Upload APK lên:
-
-- GitHub Releases
-- Website Mote
-
-Ví dụ:
-
-```text
-mote.namnth.com/download/android
-```
-
-## User Flow
-
-```text
-Download APK
-↓
-Allow install from browser/file manager
-↓
-Install Mote
-```
-
-Android có thể hiện cảnh báo vì app không được cài từ Google Play.
-
-## Test
-
-Kiểm tra ít nhất:
-
-- Android phone thật
-- Create/Edit/Search note
-- Local storage
-- App restart
-- Theme
-- Mobile editor
-- Clipboard
-- Image
-- Export
-
-## Chi phí
-
-```text
-0 đồng
-```
-
-nếu phát hành APK trực tiếp.
-
-
-# 5. Google Play
-
-Chỉ làm khi:
-
-- Mote đã có người dùng.
-- APK hoạt động ổn định.
-- Muốn distribution chuyên nghiệp hơn.
-- Muốn update dễ hơn cho người dùng.
-
-## Build
-
-Google Play ưu tiên Android App Bundle:
-
-```bash
-flutter build appbundle --release
-```
-
-Output:
-
-```text
-build/app/outputs/bundle/release/app-release.aab
-```
-
-## Chuẩn bị
-
-Cần:
-
-- App icon
-- App name
-- Description
-- Screenshots
-- Privacy Policy
-- Version
-- Release notes
-- Signing configuration
-
-## Release Flow
-
-```text
-Flutter
-↓
-Build AAB
-↓
-Google Play Console
-↓
-Internal testing
-↓
-Closed/Open testing nếu cần
-↓
-Production
-```
-
-## Chi phí
-
-Phát sinh phí đăng ký Google Play Developer.
-
-Không cần trả phí này trong giai đoạn MVP nếu vẫn phân phối APK trực tiếp.
-
-
-# 6. iOS giai đoạn đầu - PWA
-
-Không phát hành native iOS ngay.
-
-Người dùng iPhone:
-
-```text
-Safari
-↓
-mote.namnth.com
-↓
-Share
-↓
-Add to Home Screen
-```
-
-Khi cấu hình PWA đúng, Mote có thể:
-
-- Có app icon.
-- Mở dạng standalone.
-- Không hiện thanh browser như tab thông thường.
-
-Đây là lựa chọn mặc định cho iOS trong giai đoạn validation.
-
-## Chi phí
-
-```text
-0 đồng
-```
-
-
-# 7. Native iOS sau validation
-
-Chỉ làm khi:
-
-- Web/PWA đã có người dùng thật.
-- Có nhu cầu native iOS rõ ràng.
-- Mote đủ ổn định để phát hành trên App Store.
-
-## Yêu cầu
-
-Cần:
-
-- macOS
-- Xcode
-- Flutter iOS environment
-- Apple Developer account
-- App signing
-- App Store Connect
-
-## Build
-
-```bash
-flutter clean
-flutter pub get
-flutter build ios --release
-```
-
-Hoặc archive bằng Xcode để upload App Store.
-
-## Release Flow
-
-```text
-Flutter
-↓
-Xcode Archive
-↓
-App Store Connect
-↓
-TestFlight
-↓
-App Review
-↓
-App Store
-```
-
-## TestFlight
-
-Trước khi public:
-
-```text
-Internal Test
-↓
-TestFlight
-↓
-Fix
-↓
-Production
-```
-
-## Chi phí
-
-Phát sinh phí Apple Developer Program theo năm.
-
-Không cần trả khoản này ở giai đoạn MVP.
-
-
-# 8. Release Versioning
-
-Dùng Semantic Versioning:
-
-```text
-MAJOR.MINOR.PATCH
-```
-
-Ví dụ:
-
-```text
-1.0.0
-1.1.0
-1.1.1
-```
-
-Trong Flutter:
-
-```yaml
-version: 1.0.0+1
-```
-
-Trong đó:
-
-```text
-1.0.0 = version name
-1 = build number
-```
-
-Mỗi release phải tăng build number.
-
-
-# 9. Release Checklist
-
-Trước mỗi release:
-
-- [ ] `flutter analyze` không có lỗi nghiêm trọng.
-- [ ] Test các chức năng chính.
-- [ ] Test migration database nếu schema thay đổi.
-- [ ] Không mất note cũ sau update.
-- [ ] Kiểm tra Light/Dark.
-- [ ] Kiểm tra VI/EN.
-- [ ] Kiểm tra Markdown render.
-- [ ] Kiểm tra Table.
-- [ ] Kiểm tra Code Block.
-- [ ] Kiểm tra Mermaid.
-- [ ] Kiểm tra Scrollspy Desktop.
-- [ ] Kiểm tra Search.
-- [ ] Kiểm tra Trash.
-- [ ] Kiểm tra Hidden.
-- [ ] Kiểm tra Export.
-- [ ] Update version.
-- [ ] Update release notes.
-- [ ] Không commit secrets/signing keys.
-
-
-# 10. Suggested Release Flow
-
-## MVP
-
-```text
-Develop
-↓
-Manual QA
-↓
-Web/PWA
-↓
-mote.namnth.com
-```
-
-## Sau khi Web ổn
-
-```text
-Web
-+
-Windows Release
-+
-Android APK
-```
-
-Tất cả vẫn có thể phát hành mà chưa cần app store.
-
-## Khi có người dùng thật
-
-```text
-Google Play
-↓
-Native iOS
-↓
-App Store
-```
-
-
-# 11. Cost Strategy
-
-| Platform | Cách phát hành ban đầu | Chi phí thêm |
-| --- | --- | --- |
-| Web | Cloudflare Pages | Free |
-| PWA iOS/Android | Web | Free |
-| Windows | GitHub Releases / Website | Free |
-| Android | APK direct download | Free |
-| Google Play | Store | Paid account |
-| iOS native | App Store | Paid developer account |
-
-Mục tiêu giai đoạn đầu:
-
-```text
-Web + PWA + Windows + Android APK
-=
-Gần như 0 chi phí deployment
-```
-
-Chỉ trả phí store khi distribution thực sự tạo thêm giá trị.
-
-
-# 12. Deployment Order
-
-```text
-1. Web
-2. PWA
-3. Windows
-4. Android APK
-5. Google Play
-6. Native iOS
-7. App Store
-```
-
-Không làm tất cả cùng lúc.
-
-Web là production target đầu tiên và là nơi validation Mote trước khi đầu tư thời gian và chi phí cho các store.
+The separate `mote-web-v2` database helps isolate the rewrite from the old Drift database, but rollback should still be treated carefully because each version understands different storage formats.
