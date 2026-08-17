@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="220 135 820 985"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">Mote logo</title>
+  <desc id="desc">A glossy, hand-drawn golden corn kernel.</desc>
+
+  <defs>
+    <linearGradient id="kernel" x1="360" y1="250" x2="910" y2="1010" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffbf22"/>
+      <stop offset="0.38" stop-color="#ffd34d"/>
+      <stop offset="0.72" stop-color="#ffd85a"/>
+      <stop offset="1" stop-color="#ffc52f"/>
+    </linearGradient>
+
+    <linearGradient id="rim" x1="350" y1="300" x2="925" y2="970" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c98700"/>
+      <stop offset="0.45" stop-color="#dfa20b"/>
+      <stop offset="0.78" stop-color="#c48700"/>
+      <stop offset="1" stop-color="#e7a80b"/>
+    </linearGradient>
+
+    <linearGradient id="shine" x1="425" y1="300" x2="625" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.8" stop-color="#ffffff" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.82"/>
+    </linearGradient>
+
+    <radialGradient id="warmGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(670 575) rotate(65) scale(460 365)">
+      <stop offset="0" stop-color="#ffe57f" stop-opacity="0.38"/>
+      <stop offset="0.72" stop-color="#ffd352" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#f5a900" stop-opacity="0.22"/>
+    </radialGradient>
+
+    <filter id="softShadow" x="-15%" y="-12%" width="135%" height="140%">
+      <feDropShadow dx="2" dy="9" stdDeviation="8" flood-color="#b87900" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <!-- Main kernel -->
+    <path d="M963 431
+             C956 343 929 258 874 207
+             C829 165 766 158 704 177
+             C620 202 538 268 466 348
+             C392 430 330 527 287 625
+             C254 700 239 769 253 826
+             C267 883 303 918 354 946
+             C404 973 460 1009 522 1044
+             C589 1082 666 1099 736 1087
+             C812 1074 875 1027 919 957
+             C963 887 987 803 997 718
+             C1007 630 1002 545 979 484
+             C972 465 968 447 963 431 Z"
+          fill="url(#kernel)"
+          stroke="#e5a10a"
+          stroke-width="7"
+          stroke-linejoin="round"/>
+
+    <!-- Warm inner glow -->
+    <path d="M963 431
+             C956 343 929 258 874 207
+             C829 165 766 158 704 177
+             C620 202 538 268 466 348
+             C392 430 330 527 287 625
+             C254 700 239 769 253 826
+             C267 883 303 918 354 946
+             C404 973 460 1009 522 1044
+             C589 1082 666 1099 736 1087
+             C812 1074 875 1027 919 957
+             C963 887 987 803 997 718
+             C1007 630 1002 545 979 484
+             C972 465 968 447 963 431 Z"
+          fill="url(#warmGlow)"/>
+
+    <!-- Hand-drawn outer rim, intentionally open on the right -->
+    <path d="M951 419
+             C943 337 916 265 869 220
+             C828 181 773 172 712 189
+             C627 213 545 280 476 356
+             C400 440 338 536 299 629
+             C269 699 254 766 267 820
+             C280 871 310 902 361 931
+             C418 963 470 997 531 1031
+             C594 1066 663 1081 728 1070
+             C798 1058 859 1014 900 948
+             C942 881 967 799 976 714
+             C985 627 979 544 962 480"
+          fill="none"
+          stroke="url(#rim)"
+          stroke-width="31"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+
+    <!-- Broad glossy reflection -->
+    <path d="M889 271
+             C845 246 795 243 744 254
+             C683 267 619 304 554 361
+             C493 415 437 480 392 546
+             C347 611 316 675 300 731
+             C279 804 292 866 337 905
+             C348 915 360 924 374 931
+             C341 879 337 829 350 774
+             C365 710 400 638 447 568
+             C497 493 559 423 624 369
+             C686 317 750 281 807 268
+             C837 261 864 262 889 271 Z"
+          fill="url(#shine)"/>
+
+    <!-- Small specular highlight -->
+    <path d="M433 612 C412 646 396 679 386 710"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="31"
+          stroke-linecap="round"
+          opacity="0.94"/>
+
+    <!-- Friendly hand-drawn marks -->
+    <path d="M804 950 C829 929 846 905 857 878"
+          fill="none"
+          stroke="#c88900"
+          stroke-width="27"
+          stroke-linecap="round"/>
+    <path d="M735 984 C745 983 753 980 762 976"
+          fill="none"
+          stroke="#c88900"
+          stroke-width="27"
+          stroke-linecap="round"/>
+  </g>
+</svg>

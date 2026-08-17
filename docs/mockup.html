@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mote - UI Mockup</title>
+<style>
+:root{
+  --bg:#FAFAF8;--surface:#FFFFFF;--surface2:#F4F3EF;--text:#242421;--muted:#73736D;
+  --line:#E8E6DF;--accent:#F4C95D;--accent2:#D9A928;--dark:#191918;--dark2:#222220;
+  --shadow:0 20px 60px rgba(36,36,33,.08);--r:16px;
+}
+*{box-sizing:border-box} body{margin:0;background:#F1F0EC;color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit} button{cursor:pointer}
+svg{display:block}.hide{display:none!important}
+.shell{min-height:100vh;display:grid;grid-template-columns:260px 1fr}
+.catalog{position:sticky;top:0;height:100vh;overflow:auto;background:#242421;color:#fff;padding:24px 18px;border-right:1px solid #33332f}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 20px}.wordmark{font-size:28px;letter-spacing:.02em;font-weight:500}
+.seed{width:34px;height:42px}.catalog small{display:block;color:#aaa99f;padding:0 8px 12px;line-height:1.5}.catalog button{width:100%;border:0;background:transparent;color:#d7d6cf;text-align:left;padding:10px 12px;border-radius:10px;margin:2px 0}.catalog button:hover,.catalog button.active{background:#343430;color:white}
+.stage{padding:28px;overflow:auto}.stage-head{max-width:1440px;margin:0 auto 18px;display:flex;justify-content:space-between;align-items:end;gap:20px}.stage-head h1{margin:0;font-size:24px}.stage-head p{margin:4px 0 0;color:#77766f}.badge{font-size:12px;background:#fff;border:1px solid #dedcd4;border-radius:999px;padding:7px 10px;color:#65645f}
+.screen{display:none}.screen.active{display:block}.frame{max-width:1440px;margin:auto;background:var(--surface);border:1px solid #d9d7cf;border-radius:22px;box-shadow:var(--shadow);overflow:hidden;min-height:820px}
+.app{height:820px;background:var(--bg);display:grid;grid-template-columns:246px 260px minmax(520px,1fr) 210px}.app.noright{grid-template-columns:246px 260px minmax(520px,1fr)}
+.rail{background:#F4F3EF;border-right:1px solid var(--line);padding:15px 12px;display:flex;flex-direction:column;gap:4px}.rail-top{display:flex;align-items:center;gap:9px;padding:6px 8px 16px}.rail-top .seed{width:25px;height:30px}.rail-top b{font-size:19px;font-weight:600}.iconbtn{margin-left:auto;border:0;background:transparent;border-radius:8px;padding:7px;color:#676660}.iconbtn:hover{background:#e9e7e0}
+.navitem,.groupitem{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;font-size:14px;color:#55544e}.navitem.active,.groupitem.active{background:#E8E5DB;color:#242421;font-weight:600}.navitem .count{margin-left:auto;font-size:12px;color:#9b9a93}.section-label{font-size:11px;color:#9A9991;text-transform:uppercase;letter-spacing:.08em;padding:18px 10px 6px}.newnote{margin-top:auto;border:0;background:#242421;color:white;border-radius:10px;padding:10px 12px;text-align:left;display:flex;align-items:center;gap:8px}
+.notes{border-right:1px solid var(--line);background:#FBFBF9;display:flex;flex-direction:column}.notes-head{padding:20px 18px 12px;display:flex;justify-content:space-between;align-items:center}.notes-head h2{font-size:18px;margin:0}.note-card{padding:12px 14px;margin:0 8px 4px;border-radius:10px}.note-card.active{background:#F1E8C9}.note-card b{font-size:14px;display:block;margin-bottom:5px}.note-card p{margin:0;color:#85847d;font-size:12px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note-card time{font-size:11px;color:#aaa89f}.searchbox{margin:0 12px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:8px 10px;color:#93928c;font-size:13px}
+.editor{background:#fff;min-width:0;display:flex;flex-direction:column}.toolbar{height:54px;border-bottom:1px solid #efede7;display:flex;align-items:center;padding:0 18px;gap:4px;position:relative}.tool{border:0;background:transparent;border-radius:7px;padding:7px 9px;color:#65645e}.tool:hover,.tool.active{background:#f1efe9;color:#222}.toolbar .spacer{flex:1}.view-toggle{display:flex;background:#f2f0ea;border-radius:8px;padding:3px}.view-toggle button{border:0;background:transparent;padding:6px 9px;border-radius:6px;font-size:12px;color:#777}.view-toggle button.active{background:#fff;color:#222;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.doc{width:min(760px,calc(100% - 56px));margin:0 auto;padding:54px 0 100px;line-height:1.65}.doc h1{font-size:36px;line-height:1.2;margin:0 0 10px}.doc h2{font-size:23px;margin:34px 0 10px}.doc p{color:#44443f}.doc .meta{color:#a1a099;font-size:13px;margin-bottom:32px}.quote{border-left:3px solid var(--accent2);padding:10px 16px;background:#FBF8EE;border-radius:0 8px 8px 0}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#222220;color:#e8e7df;border-radius:11px;padding:16px;font-size:13px;line-height:1.6;overflow:auto}.table{width:100%;border-collapse:collapse;font-size:14px}.table th,.table td{padding:9px 11px;border:1px solid #dedcd5;text-align:left}.table th{background:#f7f6f2}.diagram{display:flex;align-items:center;justify-content:center;gap:14px;border:1px solid #e3e0d8;background:#fbfaf7;border-radius:12px;padding:26px;margin-top:12px}.node{border:1px solid #bdbbb3;background:#fff;border-radius:8px;padding:10px 14px;font-size:13px}.arrow{color:#aaa}
+.outline{border-left:1px solid var(--line);background:#FBFBF9;padding:22px 18px}.outline h4{font-size:12px;margin:0 0 14px;color:#9b9991;text-transform:uppercase;letter-spacing:.08em}.outline a{display:block;text-decoration:none;color:#7b7a74;font-size:12px;padding:5px 8px;border-left:2px solid transparent}.outline a.sub{padding-left:20px}.outline a.active{color:#242421;border-left-color:var(--accent2);font-weight:600}
+.markdown{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;white-space:pre-wrap;line-height:1.65;color:#3c3b37;background:#fff}.mdtok{color:#b28416}.mdcode{color:#8e4a73}
+.overlay{position:absolute;inset:0;background:rgba(29,29,27,.22);display:grid;place-items:start center;padding-top:110px;z-index:10}.dialog{width:620px;max-width:90%;background:#fff;border-radius:16px;border:1px solid #dedbd2;box-shadow:0 28px 80px rgba(20,20,18,.22);overflow:hidden}.dialog-head{padding:16px 18px;border-bottom:1px solid #eeeae2;display:flex;align-items:center;gap:10px}.dialog-head input{flex:1;border:0;outline:0;font-size:17px}.dialog-body{padding:8px}.result{padding:12px 14px;border-radius:10px}.result.active{background:#F6EFD7}.result b{display:block;font-size:14px}.result span{font-size:12px;color:#8c8a82}.dialog-actions{padding:14px 16px;border-top:1px solid #eeeae2;display:flex;justify-content:flex-end;gap:8px}.btn{border:1px solid #ddd9d0;background:#fff;border-radius:9px;padding:8px 12px}.btn.primary{background:#242421;color:#fff;border-color:#242421}.field{padding:14px 16px}.field label{display:block;font-size:12px;color:#77766f;margin-bottom:6px}.field input,.field select{width:100%;border:1px solid #dad7ce;border-radius:9px;padding:10px;background:#fff;color:#222}
+.settings{height:820px;display:grid;grid-template-columns:246px 1fr;background:#fff}.settings-main{padding:48px 60px;max-width:840px}.settings-main h1{font-size:28px;margin-top:0}.setting-row{display:grid;grid-template-columns:1fr 220px;align-items:center;padding:19px 0;border-bottom:1px solid #eeeae3}.setting-row b{font-size:14px}.setting-row p{font-size:12px;color:#88867f;margin:4px 0 0}.select{border:1px solid #dcd9d1;border-radius:9px;padding:9px 10px;background:#fff;color:#444}.toggle{width:42px;height:24px;border-radius:999px;background:#d6d4cd;padding:3px;margin-left:auto}.toggle.on{background:var(--accent2)}.toggle:after{content:"";display:block;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}.toggle.on:after{margin-left:18px}
+.empty{display:grid;place-items:center;height:100%;text-align:center;color:#77766f}.empty .seed{width:48px;height:58px;margin:0 auto 15px}.empty h3{color:#33322f;margin:0 0 8px}.empty p{margin:0 0 18px;font-size:14px}.empty button{border:0;background:#242421;color:white;border-radius:10px;padding:10px 14px}
+.darkapp{background:#191918;color:#eee}.darkapp .rail{background:#1F1F1D;border-color:#30302c}.darkapp .notes,.darkapp .outline{background:#20201E;border-color:#30302c}.darkapp .editor,.darkapp .toolbar{background:#191918;border-color:#30302c}.darkapp .navitem,.darkapp .groupitem{color:#a9a89f}.darkapp .navitem.active,.darkapp .groupitem.active,.darkapp .note-card.active{background:#37342A;color:#fff}.darkapp .note-card p,.darkapp .meta,.darkapp .doc p,.darkapp .outline a{color:#aaa99f}.darkapp .doc h1,.darkapp .doc h2,.darkapp .note-card b{color:#f3f2ec}.darkapp .searchbox{background:#292926;border-color:#363630;color:#aaa}.darkapp .view-toggle{background:#2c2c29}.darkapp .view-toggle button.active{background:#3a3a36;color:#fff}.darkapp .quote{background:#29271f}.darkapp .table th,.darkapp .table td{border-color:#3b3a34}.darkapp .table th{background:#262623}.darkapp .diagram{background:#222220;border-color:#393833}.darkapp .node{background:#2c2c28;border-color:#55534c}.darkapp .outline a.active{color:#fff}
+.mobile-wrap{min-height:820px;display:flex;gap:30px;justify-content:center;align-items:center;background:#e9e7e0;padding:30px}.phone{width:390px;height:780px;background:#fff;border:10px solid #1e1e1c;border-radius:42px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15);position:relative}.status{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;font-weight:600}.mobile-head{height:58px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #eeeae2;gap:10px}.mobile-head .seed{width:22px;height:27px}.mobile-head b{font-size:18px}.mobile-head .push{margin-left:auto}.fab{position:absolute;right:22px;bottom:24px;border:0;width:50px;height:50px;border-radius:16px;background:#242421;color:#fff;font-size:26px;box-shadow:0 8px 20px rgba(0,0,0,.22)}.mobile-list{padding:12px}.mgroup{font-size:12px;color:#99968e;text-transform:uppercase;letter-spacing:.08em;padding:12px 8px 6px}.mnote{padding:13px 10px;border-bottom:1px solid #f0ede7}.mnote b{display:block;font-size:15px;margin-bottom:5px}.mnote p{margin:0;color:#8d8b84;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.m-editor{padding:24px 20px 120px;height:676px;overflow:auto}.m-editor h1{font-size:30px;margin:0 0 10px}.m-toolbar{position:absolute;left:10px;right:10px;bottom:12px;height:48px;background:#fff;border:1px solid #ddd9d0;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);display:flex;align-items:center;gap:2px;padding:5px;overflow:hidden}.m-toolbar button{border:0;background:transparent;border-radius:8px;padding:8px;color:#555}.m-toolbar button.active{background:#eeeae2}.m-toggle{font-size:11px;margin-left:auto;background:#f1efe9;border-radius:7px;padding:6px 8px}
+.note-toolbar-menu{position:absolute;top:48px;right:16px;width:180px;background:#fff;border:1px solid #dfdcd4;border-radius:11px;box-shadow:0 14px 40px rgba(0,0,0,.12);padding:6px;z-index:3}.note-toolbar-menu div{padding:9px 10px;border-radius:7px;font-size:13px}.note-toolbar-menu div:hover{background:#f4f2ec}.danger{color:#a5453e}.chip{display:inline-block;padding:4px 7px;border-radius:999px;background:#f2efe5;font-size:11px;color:#7d7869;margin-right:4px}
+@media(max-width:980px){.shell{grid-template-columns:1fr}.catalog{position:static;height:auto}.catalog small{display:none}.catalog .brand{padding-bottom:8px}.catalog nav{display:flex;overflow:auto;gap:4px}.catalog button{width:auto;white-space:nowrap}.stage{padding:14px}.frame{border-radius:14px}.app{transform-origin:top left}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="moteSeed" viewBox="0 0 60 76">
+      <path d="M31 4C18 9 7 24 7 42c0 18 10 29 24 29 15 0 25-12 25-29C56 24 48 8 35 4c-1.5-.5-2.7-.6-4 0Z" fill="#F4C95D" stroke="#B9851E" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M30 7C19 13 12 27 12 41" fill="none" stroke="#FFF8E9" stroke-width="4" stroke-linecap="round"/>
+      <path d="M20 62c4 3 9 4 14 3" fill="none" stroke="#C18D21" stroke-width="3" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+<div class="shell">
+  <aside class="catalog">
+    <div class="brand"><svg class="seed"><use href="#moteSeed"/></svg><span class="wordmark">mote</span></div>
+    <small>UI mockup tổng hợp. Logo là nơi duy nhất dùng hình hoạt hình hạt ngô.</small>
+    <nav id="nav">
+      <button class="active" data-screen="s1">01. Inbox trống</button>
+      <button data-screen="s2">02. Editor - Text View</button>
+      <button data-screen="s3">03. Editor - Markdown</button>
+      <button data-screen="s4">04. Search</button>
+      <button data-screen="s5">05. Tạo Group</button>
+      <button data-screen="s6">06. Move Note</button>
+      <button data-screen="s7">07. Trash</button>
+      <button data-screen="s8">08. Hidden</button>
+      <button data-screen="s9">09. Settings</button>
+      <button data-screen="s10">10. Export</button>
+      <button data-screen="s11">11. Dark Mode</button>
+      <button data-screen="s12">12. Mobile - Notes</button>
+      <button data-screen="s13">13. Mobile - Text</button>
+      <button data-screen="s14">14. Mobile - Markdown</button>
+    </nav>
+  </aside>
+  <main class="stage">
+    <div class="stage-head"><div><h1>Mote UI Mockup</h1><p>Minimal, local-first, Markdown-first.</p></div><span class="badge">Web / Windows / Android / iOS</span></div>
+
+    <!-- 01 -->
+    <section class="screen active" id="s1"><div class="frame">
+      <div class="app noright">
+        <aside class="rail">
+          <div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b><button class="iconbtn">•••</button></div>
+          <div class="navitem active">⌂ <span>Inbox</span><span class="count">0</span></div>
+          <div class="navitem">⌕ <span>Tìm kiếm</span></div>
+          <div class="section-label">Groups</div>
+          <div class="groupitem">＋ <span>Tạo group</span></div>
+          <div class="section-label">Khác</div><div class="navitem">⚙ <span>Cài đặt</span></div>
+          <button class="newnote">＋ New note</button>
+        </aside>
+        <section class="notes"><div class="notes-head"><h2>Inbox</h2><span>⋯</span></div><div class="searchbox">⌕ Tìm trong Inbox</div></section>
+        <section class="editor"><div class="toolbar"><div class="spacer"></div><span style="color:#a4a29b;font-size:12px">Local only</span></div><div class="empty"><div><svg class="seed"><use href="#moteSeed"/></svg><h3>Chưa có ghi chú nào</h3><p>Tạo một note và bắt đầu viết.</p><button>＋ New note</button></div></div></section>
+      </div>
+    </div></section>
+
+    <!-- 02 -->
+    <section class="screen" id="s2"><div class="frame"><div class="app">
+      <aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b><button class="iconbtn">•••</button></div><div class="navitem">⌂ Inbox <span class="count">3</span></div><div class="navitem">⌕ Tìm kiếm</div><div class="section-label">Groups</div><div class="groupitem active">▣ Blogs</div><div class="groupitem">▣ Work</div><div class="groupitem">▣ Ideas</div><div class="section-label">Khác</div><div class="navitem">⚙ Cài đặt</div><button class="newnote">＋ New note</button></aside>
+      <section class="notes"><div class="notes-head"><h2>Blogs</h2><span>＋</span></div><div class="searchbox">⌕ Tìm trong Blogs</div><div class="note-card active"><b>Build Mote bằng AI</b><p>Ghi lại toàn bộ quá trình mình...</p><time>2 phút trước</time></div><div class="note-card"><b>80/20 trong công việc</b><p>Không phải việc nào cũng tạo...</p><time>Hôm qua</time></div><div class="note-card"><b>Prompt tốt không cần dài</b><p>Mình từng nghĩ prompt...</p><time>8 Thg 8</time></div></section>
+      <main class="editor"><div class="toolbar"><button class="tool">H1</button><button class="tool"><b>B</b></button><button class="tool"><i>I</i></button><button class="tool">U̲</button><button class="tool">S̶</button><button class="tool">“</button><button class="tool">&lt;/&gt;</button><button class="tool">☷</button><div class="spacer"></div><div class="view-toggle"><button class="active">Text</button><button>Markdown</button></div><button class="tool">Copy</button><button class="tool">⋯</button></div>
+        <article class="doc"><h1>Build Mote bằng AI</h1><div class="meta">Đã lưu trên thiết bị · 2 phút trước</div><p>Mote là note app mình đang xây để dùng hằng ngày và làm case study.</p><div class="quote">Một nơi nhỏ để viết những điều đáng nhớ.</div><h2>Mục tiêu</h2><ul><li>Local-first</li><li>Markdown-first</li><li>Một codebase Flutter</li></ul><h2>Bảng</h2><table class="table"><tr><th>Platform</th><th>Status</th></tr><tr><td>Web</td><td>Building</td></tr><tr><td>Windows</td><td>Next</td></tr></table><h2>Code Block</h2><div class="code"><span style="color:#b6d4ff">void</span> main() {<br>&nbsp;&nbsp;print(<span style="color:#d8ba85">'Hello Mote'</span>);<br>}</div><h2>Mermaid</h2><div class="diagram"><span class="node">Idea</span><span class="arrow">→</span><span class="node">Build</span><span class="arrow">→</span><span class="node">Product</span></div></article>
+      </main>
+      <aside class="outline"><h4>On this page</h4><a class="active">Build Mote bằng AI</a><a>Mục tiêu</a><a>Bảng</a><a>Code Block</a><a>Mermaid</a></aside>
+    </div></div></section>
+
+    <!-- 03 -->
+    <section class="screen" id="s3"><div class="frame"><div class="app">
+      <aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="navitem">⌂ Inbox</div><div class="section-label">Groups</div><div class="groupitem active">▣ Blogs</div><button class="newnote">＋ New note</button></aside>
+      <section class="notes"><div class="notes-head"><h2>Blogs</h2></div><div class="note-card active"><b>Build Mote bằng AI</b><p>Ghi lại toàn bộ quá trình...</p></div></section>
+      <main class="editor"><div class="toolbar"><button class="tool">H1</button><button class="tool"><b>B</b></button><button class="tool"><i>I</i></button><button class="tool">Link</button><button class="tool">Code</button><div class="spacer"></div><div class="view-toggle"><button>Text</button><button class="active">Markdown</button></div><button class="tool">Copy</button></div><article class="doc markdown"><span class="mdtok">#</span> Build Mote bằng AI
+
+Mote là note app mình đang xây để dùng hằng ngày và làm case study.
+
+<span class="mdtok">&gt;</span> Một nơi nhỏ để viết những điều đáng nhớ.
+
+<span class="mdtok">##</span> Mục tiêu
+
+- Local-first
+- Markdown-first
+- Một codebase Flutter
+
+<span class="mdtok">##</span> Bảng
+
+| Platform | Status |
+| --- | --- |
+| Web | Building |
+| Windows | Next |
+
+<span class="mdtok">##</span> Code Block
+
+<span class="mdcode">```dart
+void main() {
+  print('Hello Mote');
+}
+```</span>
+
+<span class="mdtok">##</span> Mermaid
+
+<span class="mdcode">```mermaid
+flowchart LR
+    A[Idea] --> B[Build] --> C[Product]
+```</span></article></main>
+      <aside class="outline"><h4>Outline</h4><a class="active">Build Mote bằng AI</a><a>Mục tiêu</a><a>Bảng</a><a>Code Block</a><a>Mermaid</a></aside>
+    </div></div></section>
+
+    <!-- 04 Search -->
+    <section class="screen" id="s4"><div class="frame" style="position:relative"><div class="app noright" style="filter:blur(.4px)"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="navitem active">⌕ Tìm kiếm</div></aside><section class="notes"></section><main class="editor"></main></div><div class="overlay"><div class="dialog"><div class="dialog-head">⌕ <input value="markdown" /></div><div class="dialog-body"><div class="result active"><b>Build Mote bằng AI</b><span>...Mote là note app local-first, Markdown-first...</span></div><div class="result"><b>Prompt tốt không cần dài</b><span>...copy Markdown để đưa thẳng lên blog...</span></div><div class="result"><b>Ý tưởng editor</b><span>...Text View và Markdown View dùng chung source...</span></div></div><div class="dialog-actions" style="justify-content:space-between"><span style="font-size:12px;color:#999">↑↓ chọn · Enter mở · Esc đóng</span></div></div></div></div></section>
+
+    <!-- 05 group -->
+    <section class="screen" id="s5"><div class="frame" style="position:relative"><div class="app noright"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="section-label">Groups</div><div class="groupitem">▣ Blogs</div><div class="groupitem">▣ Work</div><div class="groupitem">＋ Tạo group</div></aside><section class="notes"></section><main class="editor"></main></div><div class="overlay"><div class="dialog" style="width:430px;margin-top:120px"><div class="dialog-head"><b>Tạo group mới</b></div><div class="field"><label>Tên group</label><input value="Ideas" /></div><div class="dialog-actions"><button class="btn">Hủy</button><button class="btn primary">Tạo group</button></div></div></div></div></section>
+
+    <!-- 06 move -->
+    <section class="screen" id="s6"><div class="frame" style="position:relative"><div class="app noright"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="groupitem active">▣ Blogs</div></aside><section class="notes"><div class="note-card active"><b>Build Mote bằng AI</b></div></section><main class="editor"></main></div><div class="overlay"><div class="dialog" style="width:460px;margin-top:80px"><div class="dialog-head"><b>Move note</b></div><div class="dialog-body"><div class="result"><b>Inbox</b></div><div class="result active"><b>Blogs</b><span>Hiện tại</span></div><div class="result"><b>Work</b></div><div class="result"><b>Ideas</b></div></div><div class="dialog-actions"><button class="btn">Hủy</button><button class="btn primary">Move</button></div></div></div></div></section>
+
+    <!-- 07 trash -->
+    <section class="screen" id="s7"><div class="frame"><div class="app noright"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="navitem">⌂ Inbox</div><div class="section-label">Groups</div><div class="groupitem">▣ Blogs</div><div class="section-label">Khác</div><div class="navitem active">♲ Trash</div><div class="navitem">⚙ Cài đặt</div></aside><section class="notes"><div class="notes-head"><h2>Trash</h2><span style="font-size:12px;color:#999">Xóa sau 30 ngày</span></div><div class="note-card active"><b>Draft cũ</b><p>Sẽ xóa sau 27 ngày</p><time>Đã xóa 3 ngày trước</time></div><div class="note-card"><b>Test Mermaid</b><p>Sẽ xóa sau 12 ngày</p></div></section><main class="editor"><div class="toolbar"><button class="btn">Restore</button><button class="btn danger">Delete permanently</button><div class="spacer"></div></div><article class="doc"><h1>Draft cũ</h1><div class="meta">Đã chuyển vào Trash 3 ngày trước</div><p>Nội dung note vẫn đọc được trước khi bị xóa vĩnh viễn.</p></article></main></div></div></section>
+
+    <!-- 08 hidden -->
+    <section class="screen" id="s8"><div class="frame"><div class="settings"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="navitem">← Quay lại notes</div><div class="section-label">Settings</div><div class="navitem">Giao diện</div><div class="navitem">Editor</div><div class="navitem">Ngôn ngữ</div><div class="navitem active">Hidden notes</div></aside><main class="settings-main"><h1>Hidden notes</h1><p style="color:#777">Các note ở đây không xuất hiện trong sidebar hoặc kết quả tìm kiếm thông thường.</p><div class="note-card active" style="margin:18px 0 0;background:#f5f3ed"><b>Private draft</b><p>Ẩn khỏi danh sách thông thường</p></div><div class="note-card" style="margin:4px 0;background:#faf9f6"><b>Personal notes</b><p>Chỉ truy cập từ Settings</p></div><p style="margin-top:28px;color:#9b9991;font-size:12px">Hidden chỉ là ẩn khỏi UI, không phải mã hóa dữ liệu.</p></main></div></div></section>
+
+    <!-- 09 settings -->
+    <section class="screen" id="s9"><div class="frame"><div class="settings"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="navitem">← Quay lại notes</div><div class="section-label">Settings</div><div class="navitem active">Giao diện</div><div class="navitem">Editor</div><div class="navitem">Ngôn ngữ</div><div class="navitem">Hidden notes</div></aside><main class="settings-main"><h1>Cài đặt</h1><div class="setting-row"><div><b>Theme</b><p>Light, Dark hoặc theo hệ thống.</p></div><select class="select"><option>System</option><option>Light</option><option>Dark</option></select></div><div class="setting-row"><div><b>Font editor</b><p>Chỉ ảnh hưởng cách hiển thị, không đổi Markdown.</p></div><select class="select"><option>Sans</option><option>Serif</option><option>Mono</option></select></div><div class="setting-row"><div><b>View mặc định</b><p>Mở note ở Text hoặc Markdown View.</p></div><select class="select"><option>Text</option><option>Markdown</option></select></div><div class="setting-row"><div><b>Scrollspy</b><p>Hiển thị outline H1-H4 ở Desktop.</p></div><div class="toggle on"></div></div><div class="setting-row"><div><b>Ngôn ngữ</b><p>Ngôn ngữ giao diện.</p></div><select class="select"><option>Tiếng Việt</option><option>English</option></select></div><div class="setting-row"><div><b>Dữ liệu</b><p>Tất cả note đang được lưu trên thiết bị này.</p></div><span class="chip">Local-first</span></div></main></div></div></section>
+
+    <!-- 10 export -->
+    <section class="screen" id="s10"><div class="frame" style="position:relative"><div class="app noright"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b></div><div class="groupitem active">▣ Blogs</div></aside><section class="notes"><div class="note-card active"><b>Build Mote bằng AI</b></div></section><main class="editor"><div class="toolbar"><div class="spacer"></div><button class="tool">Export</button></div></main></div><div class="overlay"><div class="dialog" style="width:500px;margin-top:60px"><div class="dialog-head"><b>Export note</b></div><div class="dialog-body"><div class="result active"><b>Markdown (.md)</b><span>Định dạng chính của Mote</span></div><div class="result" style="opacity:.48"><b>Plain text (.txt)</b><span>Làm sau MVP</span></div><div class="result" style="opacity:.48"><b>PDF (.pdf)</b><span>Làm sau MVP</span></div><div class="result" style="opacity:.48"><b>Word (.docx)</b><span>Làm sau MVP</span></div></div><div class="dialog-actions"><button class="btn">Hủy</button><button class="btn primary">Export .md</button></div></div></div></div></section>
+
+    <!-- 11 dark -->
+    <section class="screen" id="s11"><div class="frame"><div class="app darkapp"><aside class="rail"><div class="rail-top"><svg class="seed"><use href="#moteSeed"/></svg><b style="color:#fff">mote</b></div><div class="navitem">⌂ Inbox</div><div class="section-label">Groups</div><div class="groupitem active">▣ Blogs</div><button class="newnote" style="background:#f1f0e9;color:#222">＋ New note</button></aside><section class="notes"><div class="notes-head"><h2 style="color:#fff">Blogs</h2></div><div class="searchbox">⌕ Tìm trong Blogs</div><div class="note-card active"><b>Build Mote bằng AI</b><p>Ghi lại toàn bộ quá trình...</p></div></section><main class="editor"><div class="toolbar"><button class="tool">H1</button><button class="tool"><b>B</b></button><div class="spacer"></div><div class="view-toggle"><button class="active">Text</button><button>Markdown</button></div></div><article class="doc"><h1>Build Mote bằng AI</h1><div class="meta">Đã lưu trên thiết bị</div><p>Dark mode vẫn giữ màu vàng chỉ làm accent.</p><h2>Mục tiêu</h2><div class="quote">UI yên tĩnh để nội dung nổi bật hơn.</div><h2>Mermaid</h2><div class="diagram"><span class="node">Write</span><span class="arrow">→</span><span class="node">Save</span><span class="arrow">→</span><span class="node">Ship</span></div></article></main><aside class="outline"><h4>On this page</h4><a class="active">Build Mote bằng AI</a><a>Mục tiêu</a><a>Mermaid</a></aside></div></div></section>
+
+    <!-- 12 mobile list -->
+    <section class="screen" id="s12"><div class="frame"><div class="mobile-wrap"><div class="phone"><div class="status"><span>9:41</span><span>●●● 100%</span></div><div class="mobile-head"><svg class="seed"><use href="#moteSeed"/></svg><b>mote</b><span class="push">⌕ &nbsp; ⚙</span></div><div class="mobile-list"><div class="mgroup">Inbox</div><div class="mnote"><b>Ý tưởng Mote</b><p>Local-first, Markdown-first...</p></div><div class="mnote"><b>Việc cần làm hôm nay</b><p>- [ ] Review Product Spec...</p></div><div class="mgroup">Blogs</div><div class="mnote"><b>Build Mote bằng AI</b><p>Ghi lại toàn bộ quá trình...</p></div><div class="mnote"><b>80/20 trong công việc</b><p>Không phải việc nào cũng...</p></div></div><button class="fab">＋</button></div></div></div></section>
+
+    <!-- 13 mobile text -->
+    <section class="screen" id="s13"><div class="frame"><div class="mobile-wrap"><div class="phone"><div class="status"><span>9:41</span><span>●●● 100%</span></div><div class="mobile-head"><span>‹</span><b style="font-size:14px">Build Mote bằng AI</b><span class="push">Copy &nbsp; ⋯</span></div><div class="m-editor"><h1>Build Mote bằng AI</h1><p style="color:#999;font-size:12px">Đã lưu trên thiết bị</p><p>Mote là note app mình đang xây để dùng hằng ngày.</p><h2>Mục tiêu</h2><ul><li>Local-first</li><li>Markdown-first</li><li>Flutter</li></ul><h2>Code</h2><div class="code" style="font-size:11px">print('Hello Mote');</div></div><div class="m-toolbar"><button><b>B</b></button><button><i>I</i></button><button>H</button><button>☷</button><button>&lt;/&gt;</button><span class="m-toggle">Text</span></div></div></div></div></section>
+
+    <!-- 14 mobile markdown -->
+    <section class="screen" id="s14"><div class="frame"><div class="mobile-wrap"><div class="phone"><div class="status"><span>9:41</span><span>●●● 100%</span></div><div class="mobile-head"><span>‹</span><b style="font-size:14px">Build Mote bằng AI</b><span class="push">Copy &nbsp; ⋯</span></div><div class="m-editor markdown" style="padding-top:22px"># Build Mote bằng AI
+
+Mote là note app mình đang xây để dùng hằng ngày.
+
+## Mục tiêu
+
+- Local-first
+- Markdown-first
+- Flutter
+
+```dart
+print('Hello Mote');
+```
+
+```mermaid
+flowchart LR
+A[Idea] --> B[Product]
+```</div><div class="m-toolbar"><button><b>B</b></button><button><i>I</i></button><button>H</button><button>☷</button><button>&lt;/&gt;</button><span class="m-toggle">Markdown</span></div></div></div></div></section>
+  </main>
+</div>
+<script>
+const buttons=[...document.querySelectorAll('#nav button')];
+const screens=[...document.querySelectorAll('.screen')];
+buttons.forEach(b=>b.addEventListener('click',()=>{
+  buttons.forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  screens.forEach(s=>s.classList.remove('active'));
+  document.getElementById(b.dataset.screen).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}));
+</script>
+</body>
+</html>
