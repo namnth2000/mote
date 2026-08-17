@@ -1,0 +1,27 @@
+{
+  "name": "Mote - Markdown Notes",
+  "short_name": "Mote",
+  "description": "A minimal, local-first Markdown note app.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF8",
+  "theme_color": "#F4C95D",
+  "icons": [
+    {
+      "src": "/branding/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/branding/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/branding/favicon/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

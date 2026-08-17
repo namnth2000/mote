@@ -1,285 +1,205 @@
 # Mote - Database Design
 
-> Drift + SQLite. Local-first. Markdown là source of truth.
+> IndexedDB, local-first, Markdown-first.
 
-## 1. Mục tiêu
+## 1. Goals
 
-Database chỉ lưu dữ liệu cần để Mote hoạt động:
+The database stores only what Mote needs to restore the user's application state:
 
-- Notes.
-- Groups.
-- Settings.
-- Asset metadata.
+- groups
+- notes
+- settings
 
-Không lưu HTML render, Mermaid output hoặc rich-text document.
+Rendered HTML, Mermaid SVG and search results are derived and are not persisted.
 
-## 2. ERD
+## 2. Database identity
+
+```text
+name: mote-web-v2
+version: 1
+```
+
+The separate name is intentional. The old Flutter web implementation used a Drift database named `mote`. The rewrite must not silently reinterpret or overwrite that storage.
+
+## 3. Object stores
 
 ```mermaid
 erDiagram
     GROUPS ||--o{ NOTES : contains
-    NOTES ||--o{ ASSETS : references
 
     GROUPS {
-        text id PK
-        text name
-        int sort_order
-        datetime created_at
-        datetime updated_at
+        string id PK
+        string name
+        number sortOrder
+        string createdAt
+        string updatedAt
     }
 
     NOTES {
-        text id PK
-        text group_id FK
-        text title
-        text content_markdown
-        boolean is_favorite
-        boolean is_hidden
-        datetime deleted_at
-        datetime created_at
-        datetime updated_at
-    }
-
-    ASSETS {
-        text id PK
-        text note_id FK
-        text path
-        text mime_type
-        int size_bytes
-        datetime created_at
+        string id PK
+        string groupId
+        string title
+        string contentMarkdown
+        boolean isFavorite
+        boolean isHidden
+        string deletedAt
+        string createdAt
+        string updatedAt
     }
 
     SETTINGS {
-        text key PK
-        text value
-        datetime updated_at
+        string key PK
+        string value
+        string updatedAt
     }
 ```
 
-## 3. `groups`
+Dates are stored as ISO 8601 strings.
+
+## 4. `groups`
+
+Key path: `id`.
 
 | Field | Type | Rule |
 | --- | --- | --- |
-| `id` | TEXT | PK, UUID |
-| `name` | TEXT | NOT NULL |
-| `sort_order` | INTEGER | NOT NULL, default 0 |
-| `created_at` | DATETIME | NOT NULL |
-| `updated_at` | DATETIME | NOT NULL |
+| `id` | string | stable unique ID |
+| `name` | string | required |
+| `sortOrder` | number | default 0 |
+| `createdAt` | ISO string | required |
+| `updatedAt` | ISO string | required |
 
-### System groups
+Index: `sortOrder`.
 
-`Inbox`, `Trash`, `Hidden` không nhất thiết phải là row thật.
+System collections are not group rows.
 
-Khuyến nghị:
+## 5. `notes`
 
-- Inbox = `group_id IS NULL`.
-- Trash = `deleted_at IS NOT NULL`.
-- Hidden = `is_hidden = true`.
-
-Như vậy tránh duplicate state và đơn giản query.
-
-## 4. `notes`
+Key path: `id`.
 
 | Field | Type | Rule |
 | --- | --- | --- |
-| `id` | TEXT | PK, UUID |
-| `group_id` | TEXT? | FK -> groups.id, NULL = Inbox |
-| `title` | TEXT | NOT NULL, default `Untitled` |
-| `content_markdown` | TEXT | NOT NULL, default empty |
-| `is_favorite` | BOOLEAN | NOT NULL, default false |
-| `is_hidden` | BOOLEAN | NOT NULL, default false |
-| `deleted_at` | DATETIME? | NULL = active |
-| `created_at` | DATETIME | NOT NULL |
-| `updated_at` | DATETIME | NOT NULL |
+| `id` | string | stable unique ID |
+| `groupId` | string or null | null = Inbox |
+| `title` | string | empty allowed, UI shows Untitled |
+| `contentMarkdown` | string | Markdown source of truth |
+| `isFavorite` | boolean | default false |
+| `isHidden` | boolean | default false |
+| `deletedAt` | ISO string or null | null = active |
+| `createdAt` | ISO string | required |
+| `updatedAt` | ISO string | required |
 
-### Rule
-
-- `deleted_at != NULL` thì note chỉ xuất hiện trong Trash.
-- Trash có thể chứa hidden note, nhưng UI Trash không cần phân biệt.
-- Restore đặt `deleted_at = NULL`.
-- Note bị xóa vĩnh viễn sau 30 ngày.
-- Xóa group không xóa note vĩnh viễn. Note trong group được chuyển về Inbox trước.
-
-## 5. `assets`
-
-Dùng cho image metadata.
-
-| Field | Type | Rule |
-| --- | --- | --- |
-| `id` | TEXT | PK, UUID |
-| `note_id` | TEXT? | FK -> notes.id |
-| `path` | TEXT | NOT NULL |
-| `mime_type` | TEXT? | optional |
-| `size_bytes` | INTEGER? | optional |
-| `created_at` | DATETIME | NOT NULL |
-
-Binary image không lưu trong SQLite.
-
-Native:
+Indexes:
 
 ```text
-Mote/
-└── assets/images/
+groupId
+updatedAt
+deletedAt
+isHidden
+isFavorite
 ```
 
-Web dùng storage phù hợp với browser và database chỉ giữ reference.
+Derived collections:
+
+- Inbox: active, visible, `groupId == null`
+- Favorites: active, visible, `isFavorite == true`
+- Hidden: active, `isHidden == true`
+- Trash: `deletedAt != null`
 
 ## 6. `settings`
 
-Key-value để tránh migration chỉ vì thêm preference nhỏ.
+Key path: `key`.
 
-Ví dụ:
+```json
+{
+  "key": "theme",
+  "value": "system",
+  "updatedAt": "2026-08-17T00:00:00.000Z"
+}
+```
 
-| key | value |
+Supported settings:
+
+| Key | Values |
 | --- | --- |
-| `theme` | `light` / `dark` / `system` |
-| `language` | `vi` / `en` |
-| `font_family` | `sans` / `serif` / `mono` |
-| `editor_view` | `text` / `markdown` |
-| `scrollspy_enabled` | `true` / `false` |
+| `theme` | `system`, `light`, `dark` |
+| `language` | `vi`, `en` |
+| `editor_view` | `preview`, `markdown` |
+| `scrollspy_enabled` | `true`, `false` |
 
-## 7. Indexes
+There is no `font_family` setting in the web rewrite.
 
-MVP:
+## 7. Data rules
 
-```text
-idx_notes_group_id
-idx_notes_updated_at
-idx_notes_deleted_at
-idx_notes_is_hidden
-idx_notes_is_favorite
-```
+### Delete group
 
-Search ban đầu có thể dùng title/content query đơn giản.
+One read/write transaction should:
 
-Nếu dữ liệu lớn và search chậm, thêm SQLite FTS sau validation. Không làm FTS ngay nếu chưa cần.
+1. Find notes belonging to the group.
+2. Set their `groupId` to null.
+3. Update their `updatedAt`.
+4. Delete the group.
 
-## 8. Common Queries
-
-### Inbox
-
-```sql
-SELECT * FROM notes
-WHERE group_id IS NULL
-  AND deleted_at IS NULL
-  AND is_hidden = 0
-ORDER BY updated_at DESC;
-```
-
-### Group
-
-```sql
-SELECT * FROM notes
-WHERE group_id = :groupId
-  AND deleted_at IS NULL
-  AND is_hidden = 0
-ORDER BY updated_at DESC;
-```
-
-### Hidden
-
-```sql
-SELECT * FROM notes
-WHERE is_hidden = 1
-  AND deleted_at IS NULL
-ORDER BY updated_at DESC;
-```
+A group deletion must not permanently delete notes.
 
 ### Trash
 
-```sql
-SELECT * FROM notes
-WHERE deleted_at IS NOT NULL
-ORDER BY deleted_at DESC;
-```
-
-### Permanent cleanup
-
-```sql
-DELETE FROM notes
-WHERE deleted_at < :thirtyDaysAgo;
-```
-
-Asset file liên quan phải được cleanup cùng transaction/service flow.
-
-## 9. Transactions
-
-Bắt buộc transaction cho:
-
-- Delete group -> move notes về Inbox -> delete group.
-- Permanent delete note -> delete asset metadata -> delete note.
-- Import library sau này.
-
-File binary không thể rollback hoàn toàn bằng SQLite transaction, nên file service phải xử lý theo sequence an toàn.
-
-## 10. Title Handling
-
-MVP có thể lưu `title` riêng để list/search nhanh.
-
-Quy tắc đề xuất:
-
-1. Người dùng sửa title trực tiếp thì dùng title đó.
-2. Nếu title rỗng, derive từ heading/text đầu tiên.
-3. Nếu vẫn rỗng -> `Untitled` / `Không tiêu đề` ở UI.
-
-Không tự sửa Markdown chỉ để đồng bộ title.
-
-## 11. Trash 30 ngày
-
-Không cần background service chạy liên tục.
-
-Trigger cleanup khi:
-
-- App start.
-- Mở Trash.
-- Định kỳ trong session nếu cần.
+Delete note:
 
 ```text
-now - deleted_at >= 30 days -> permanent delete
+deletedAt = now
 ```
 
-## 12. Migration and restore safety
+Restore:
 
-Dùng Drift schema version. Current implementation schema version is `1`.
+```text
+deletedAt = null
+```
 
-Nguyên tắc:
+Permanent delete removes the note row.
 
-- Migration phải giữ nguyên Markdown content.
-- Backup/export trước migration lớn nếu có thể.
-- Không thay đổi schema chỉ để tối ưu sớm.
-- Mỗi lần tăng `schemaVersion` phải thêm migration theo thứ tự trong `MigrationStrategy.onUpgrade`.
-- Nếu thiếu migration, app dừng thay vì mở database với schema chưa được chuyển đổi.
-- Full restore validates every file and relationship before modifying local data, then replaces all persisted rows in one transaction.
-- Backup format version is independent from database schema version. See `Data_Portability.md`.
+### 30-day cleanup
 
-## 13. Không thuộc MVP
+At app startup:
 
-Không có các table sau:
+```text
+now - deletedAt >= 30 days
+    ↓
+permanent delete
+```
 
-- users
-- accounts
-- sync_state
-- shared_notes
-- permissions
-- comments
-- AI history
+No background cron or server job is required.
 
-Chỉ thêm khi feature tương ứng thực sự được triển khai.
+## 8. Search
 
-## 14. Current persisted model
+The MVP loads the local note list and performs case-insensitive title/content filtering in memory.
 
-The schema implemented in `AppDatabase` currently contains exactly three tables:
+Do not add a full-text index until real note volume makes this measurably slow.
 
-- `note_groups`: stable text ID, name, sort order, created and updated timestamps.
-- `notes`: stable text ID, optional group ID, title, Markdown source, favorite flag, hidden flag, optional trash timestamp, created and updated timestamps.
-- `settings_entries`: key, string value, and updated timestamp.
+## 9. Backup transaction
 
-Derived collections are not separate rows:
+Full backup is created from snapshots of groups, notes and settings.
 
-- Inbox: `group_id IS NULL`.
-- Favorites: `is_favorite = true`.
-- Hidden: `is_hidden = true`.
-- Trash: `deleted_at IS NOT NULL`.
-- There is no separate archive state in schema version 1.
+Restore must:
 
-The earlier `assets` section is a future design note. No assets table or binary asset store exists in schema version 1, so it is not included in full backups.
+1. Parse and validate the complete backup first.
+2. Ask the user for destructive confirmation.
+3. Clear and replace `groups`, `notes` and `settings` in one IndexedDB transaction.
+4. Leave current data unchanged if validation fails before the transaction.
+
+See `Data_Portability.md`.
+
+## 10. Schema migrations
+
+When `DB_VERSION` increases:
+
+- add upgrade logic inside `onupgradeneeded`
+- preserve all `contentMarkdown` values
+- never delete an object store as a shortcut for migration
+- add compatibility tests for existing data shapes
+- document the change in `CHANGELOG.md`
+
+Backup format versioning is separate from IndexedDB schema versioning.
+
+## 11. Not in MVP
+
+No stores for users, accounts, sync state, collaboration, comments, AI history, uploaded image binaries, rendered Markdown or Mermaid output.

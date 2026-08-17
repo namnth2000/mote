@@ -2,405 +2,288 @@
 
 > **M**arkdown N**ote**
 
-> Một note app tối giản, local-first, tập trung vào viết Markdown nhanh và sở hữu dữ liệu của chính mình.
+Mote is a minimal, local-first Markdown note app focused on reliable writing and ownership of the user's notes.
 
-## 1. Mục tiêu
+## 1. Product goal
 
-Mote được tạo để:
+The current goal is not to build four separate native applications.
 
-- Dùng làm note app cá nhân hằng ngày.
-- Viết và quản lý blog Markdown.
-- Chạy trên Web, Windows, Android và iOS.
-- Là flagship case study về quá trình tạo một sản phẩm đa nền tảng bằng AI.
-- Ưu tiên đơn giản, nhanh, dễ dùng hơn việc cố trở thành một bản sao của Notion.
+The goal is to make one small Web/PWA product that:
 
-## 2. Product Principles
+- opens quickly
+- lets the user write Markdown reliably
+- behaves naturally for text selection, copy, paste and mobile editing
+- stores notes locally without requiring an account
+- renders Markdown cleanly for reading
+- can be installed as a PWA where the platform supports it
 
-1. Mở app -> viết ngay.
-2. Local-first, người dùng sở hữu dữ liệu.
-3. Markdown là định dạng chính.
-4. Một codebase cho nhiều nền tảng nếu khả thi.
-5. Giao diện tối giản, ít thao tác.
-6. Không thêm tính năng chỉ vì các note app khác có.
+Web/PWA is the product for the current validation phase.
 
-## 3. Brand
+## 2. Product principles
 
-**Tên:** Mote
+1. Open the app and write immediately.
+2. Markdown is the single source of truth.
+3. Local-first by default.
+4. Native browser text behavior is preferred over custom editor abstractions.
+5. Product reliability is more important than platform count.
+6. Features are added only when they solve a real use case.
+7. A fixed visual language is preferable to unnecessary settings.
 
-**Logo:** Hạt ngô phong cách vẽ tay, đơn giản, cute.
+## 3. Platforms
 
-**Phong cách UI:**
-- Tối giản.
-- Hiện đại.
-- Light / Dark theme.
-- Ít màu, nhiều khoảng trắng.
-- Ưu tiên trải nghiệm đọc và viết.
+### MVP
 
-## 4. Platforms
+- Desktop web
+- Mobile web
+- Installable PWA where supported
 
-- Web
-- Windows
-- Android
-- iOS
+This one PWA can serve Windows, Android, iOS and desktop browsers without maintaining separate native UI implementations.
 
-Ưu tiên triển khai theo thứ tự:
+### Not in MVP
 
-1. Web MVP
-2. Windows
-3. Android
-4. iOS
+- Native Windows executable
+- Android APK / Play Store package
+- Native iOS / App Store package
+- Capacitor wrapper
 
-## 5. Cấu trúc dữ liệu
+A native wrapper can be evaluated later only if a proven requirement needs native APIs or store distribution.
+
+## 4. Information structure
 
 ```text
 Mote
 ├── Inbox
+├── Favorites
 ├── Groups...
-├── Trash
-└── Hidden
+├── Hidden
+└── Trash
 ```
 
-### Group
+### Groups
 
-- Tạo group.
-- Đổi tên.
-- Xóa.
-- Chứa nhiều note.
+- Create group.
+- Rename group.
+- Delete group.
+- Deleting a group moves its active notes to Inbox.
 
 ### Inbox
 
-Nơi mặc định cho note mới chưa được phân loại.
+Notes without a group.
 
-### Trash
+### Favorites
 
-- Note bị xóa được chuyển vào Trash.
-- Tự động xóa vĩnh viễn sau 30 ngày.
-- Có thể Restore hoặc Delete permanently.
+A derived collection of active favorite notes.
 
 ### Hidden
 
-- Không hiển thị trong danh sách group thông thường.
-- Chỉ truy cập qua Settings.
-- Dùng để ẩn các note người dùng không muốn xuất hiện thường xuyên.
+A derived collection of active hidden notes.
 
-## 6. Note Editor
+Hidden is only an organization feature. It is not encryption and must not be presented as a security feature.
 
-### Format cơ bản
+### Trash
 
-- H1, H2, H3, H4
+- Deleting a note moves it to Trash.
+- Restore is supported.
+- Permanent delete is supported.
+- Notes older than 30 days in Trash are cleaned up when the app starts.
+
+## 5. Note editor
+
+### Source model
+
+A note has one editable document field:
+
+```text
+contentMarkdown: string
+```
+
+Mote does not maintain a second rich-text document model.
+
+### Markdown mode
+
+Markdown mode uses a native HTML `<textarea>`.
+
+The product intentionally relies on browser-native behavior for:
+
+- caret movement
+- text selection
+- double-click / double-tap selection where the platform provides it
+- copy and paste
+- undo and redo
+- keyboard input
+- touch selection handles
+
+Mote should not replace these behaviors with a custom text layout engine.
+
+### Preview mode
+
+Preview is a rendered, read-oriented view of the same Markdown source.
+
+Preview is not a WYSIWYG editor.
+
+To edit content, the user switches to Markdown mode. The title remains a normal text field.
+
+### Formatting toolbar
+
+Supported Markdown transformations:
+
+- H1-H4
 - Bold
 - Italic
-- Underline
+- Underline using `<u>`
 - Strikethrough
 - Link
 - Quote
 - Inline code
-- Code Block
-- Image
+- Fenced code block
 - Bullet list
 - Numbered list
 - Checkbox
-- Table đơn giản
-- Mermaid diagram
+- Simple table
 
-### Table
+Formatting operations must preserve the current selected text and use native `selectionStart` / `selectionEnd` ranges.
 
-Hỗ trợ Markdown table cơ bản:
+## 6. Preview capabilities
 
-```md
-| Name | Status |
-| --- | --- |
-| Mote | Building |
-```
+The MVP Preview supports:
 
-Không cần spreadsheet features như formula, sort hoặc filter.
+- headings
+- paragraphs
+- links
+- bold / italic / underline / strikethrough
+- lists and checkboxes
+- blockquotes
+- inline code
+- fenced code blocks
+- syntax highlighting for common languages
+- tables
+- images referenced by Markdown URLs
+- Mermaid fenced blocks
 
-### Code Block
+Mermaid failure must not corrupt the note. The Markdown source remains intact.
 
-Hỗ trợ fenced code block:
+## 7. Typography and style
 
-````md
-```python
-print("Hello Mote")
-```
-````
+Typography is intentionally fixed.
 
-Có syntax highlighting cho các ngôn ngữ phổ biến.
+### App UI and Preview
 
-### Mermaid
+- Inter
+- system font fallbacks
+- Preview body approximately 16px / 1.62 line-height
 
-Render Mermaid trực tiếp trong Text View:
+### Markdown editing
 
-````md
-```mermaid
-flowchart LR
-    A[Idea] --> B[Product]
-```
-````
+- native monospace stack
+- approximately 14px / 1.65 line-height
 
-Markdown View vẫn hiển thị syntax gốc.
+### Removed setting
 
-## 7. Editor Views
+There is no Editor Font setting.
 
-Có 2 chế độ:
+The previous `Sans / Serif / Mono` preference is removed from both the UI and persisted settings model.
 
-### Text View
+The existing Mote light/dark palette and editing/Preview visual style should be preserved unless a later design decision changes them.
 
-Hiển thị nội dung đã render để đọc và chỉnh sửa thuận tiện.
+## 8. Core features
 
-### Markdown View
+MVP features:
 
-Hiển thị Markdown syntax gốc.
-
-Ví dụ:
-
-```md
-# Mote
-
-**Simple notes.**
-
-- Markdown
-- Local-first
-- Fast
-```
-
-## 8. Desktop Layout
-
-```text
-┌────────────┬──────────────────────────────┬───────────┐
-│[Groups]    │                              │[Scrollspy]│
-│            │         [Editor]             │           │
-│[Notes]     │                              │ H1        │
-│            │                              │   H2      │
-│            │                              │   H2      │
-│            │                              │ H1        │
-└────────────┴──────────────────────────────┴───────────┘
-```
-
-### Scrollspy
-
-Desktop có Scrollspy ở bên phải, cạnh scrollbar.
-
-- Tự động lấy H1-H4 làm outline.
-- Highlight heading của vùng đang đọc.
-- Click heading để scroll tới section tương ứng.
-- Có thể collapse / hide.
-- Note ngắn hoặc không có heading thì tự ẩn.
-- Mobile không cần Scrollspy cố định.
-
-## 9. Fonts
-
-Chỉ cần 3 nhóm:
-
-- Sans
-- Serif
-- Mono
-
-Người dùng chọn font cho editor trong Settings.
-
-Không cần hệ thống font phức tạp trong MVP.
-
-## 10. Core Features
-
-- Auto Save
-- Create / Rename / Delete note
-- Create / Rename / Delete group
-- Move note giữa các group
-- Search toàn bộ note
-- Favorite / Pin note
-- Recent Notes
-- Quick Note
-- Copy Page Content
-- Light / Dark theme
-- Vietnamese / English
-
-### Copy Page Content
-
-Một nút copy toàn bộ nội dung hiện tại dưới dạng Markdown syntax, bất kể đang ở Text View hay Markdown View.
-
-## 11. File & Export
-
-Định dạng chính:
-
-- `.md`
-
-Export:
-
-- `.md`
-- `.txt`
-- `.docx`
-- `.pdf`
-
-Không cần biến `.docx` hoặc `.pdf` thành định dạng lưu trữ nội bộ.
-
-Markdown vẫn là source of truth.
-
-## 12. Images
-
-Hỗ trợ:
-
-- Chọn image từ thiết bị.
-- Drag & Drop trên Desktop/Web.
-- Paste image từ clipboard.
-- Render Markdown image.
-
-```md
-![Alt text](image-path)
-```
-
-## 13. Storage
-
-### MVP
-
-Local-first.
-
-- Note lưu trên thiết bị.
-- Không bắt buộc đăng nhập.
-- Không phụ thuộc cloud để sử dụng app.
-
-### Sau MVP
-
-Có thể nghiên cứu:
-
-- Import / Export toàn bộ library.
-- Google Drive.
-- OneDrive.
-- Git.
-- Đồng bộ nhiều thiết bị.
-
-Sync không thuộc MVP.
-
-## 14. Blog Compatibility
-
-Blog trên `blog.namnth.com` sử dụng cùng Markdown convention với Mote.
-
-Mục tiêu:
-
-```text
-Viết trong Mote
-      ↓
-Copy / Export Markdown
-      ↓
-Đưa vào blog
-      ↓
-Render gần như giống trong Mote
-```
-
-Các thành phần cần tương thích:
-
-- Heading
-- Text formatting
-- Lists
-- Quote
-- Code
-- Code Block
-- Image
-- Table
-- Mermaid
-
-## 15. MVP Scope
-
-### Phải có
-
-- Note + Group
+- Note CRUD
+- Group CRUD
 - Inbox
-- Trash 30 ngày
+- Favorites
 - Hidden
-- Pin / Favorite
-- Markdown Editor
-- Text / Markdown View
-- Basic formatting
-- Table
-- Code Block
-- Mermaid
-- Search
-- Auto Save
+- Trash and restore
+- Search title and Markdown content
+- Markdown mode
+- Preview mode
+- Formatting toolbar
+- Auto save
 - Copy Markdown
-- Light / Dark
-- Scrollspy Desktop
-- Save as .txt
-- `.md` export
-- PDF / DOCX export
+- Export current note as `.md`
+- Import one or more `.md` files
+- Full JSON backup and restore
+- Light / Dark / System theme
+- Vietnamese / English UI
+- Desktop heading outline
+- PWA installability and offline shell
 
-### Làm sau
+## 9. Storage
 
-- Advanced syntax highlighting
-- Quick Note shortcut
-- Import library
-- Cloud backup
-- Sync
+Mote is local-first.
+
+The web rewrite stores application data in IndexedDB under a separate database namespace:
+
+```text
+mote-web-v2
+```
+
+No account or server is required.
+
+The application must not send note content to analytics, logs or external APIs by default.
+
+## 10. Data portability
+
+Markdown remains the portable note format.
+
+The MVP provides:
+
+- export one note as `.md`
+- import `.md` files
+- export all Mote data as a versioned JSON backup
+- restore a supported Mote JSON backup after validation and confirmation
+
+The Flutter/Drift backup format is not automatically reinterpreted by the web rewrite. See `Data_Portability.md` for migration guidance.
+
+## 11. Settings
+
+Persisted settings are limited to:
+
+- theme: `system | light | dark`
+- language: `vi | en`
+- editor view: `preview | markdown`
+- desktop outline enabled: `true | false`
+
+Not persisted:
+
+- editor font
+- Preview font
+- font size presets
+- complex layout preferences
+
+## 12. Explicitly out of MVP
+
+- Cloud sync
+- Accounts
+- Collaboration
 - Public sharing
+- AI writing features
+- Rich-text editing
+- Native packages
+- PDF export
+- DOCX export
+- Image asset upload/storage
+- Arbitrarily nested groups
+- End-to-end encryption
+- Plugin system
 
-## 16. Implementation Roadmap
+## 13. Definition of Done - Web MVP
 
-### Phase 1 - Web MVP
+The Web MVP is ready for validation when a user can:
 
-1. App shell + responsive layout.
-2. Local storage architecture.
-3. Group + Note CRUD.
-4. Markdown editor.
-5. Text / Markdown View.
-6. Formatting + Table + Code Block + Mermaid.
-7. Search.
-8. Trash + Hidden.
-9. Scrollspy.
-10. Theme + language.
-11. Copy / Export Markdown.
-12. Manual QA.
-13. Deploy Web.
+1. Open Mote and create a note.
+2. Select, edit, copy and paste Markdown naturally on desktop and mobile web.
+3. Apply the supported formats without losing selected text.
+4. Switch between Markdown and Preview without changing source content.
+5. Create and manage groups.
+6. Find notes using search.
+7. Favorite, hide, delete and restore notes.
+8. Reload the app and keep local data.
+9. Import and export Markdown.
+10. Create and restore a full backup.
+11. Use Light/Dark/System theme and VI/EN UI.
+12. Install or use the PWA where supported.
+13. Complete the production smoke tests in `Deployment.md` without critical editor bugs.
 
-**Output:** Mote Web MVP.
-
-### Phase 2 - Desktop
-
-1. Reuse core code.
-2. Adapt filesystem/storage.
-3. Add desktop shortcuts.
-4. Drag & Drop / clipboard improvements.
-5. Package Windows app.
-6. Test installer and local files.
-
-**Output:** Mote for Windows.
-
-### Phase 3 - Mobile
-
-1. Adapt responsive editor.
-2. Mobile navigation.
-3. Touch-friendly toolbar.
-4. Local storage.
-5. Android build + test.
-6. iOS build + test.
-
-**Output:** Mote for Android + iOS.
-
-### Phase 4 - Validation
-
-Theo dõi:
-
-- Số người dùng thử.
-- Người quay lại.
-- Feature request lặp lại.
-- Bug phổ biến.
-- Feedback về editor.
-- Nhu cầu sync / backup.
-
-Chỉ dựa trên dữ liệu này để quyết định V2.
-
-## 17. Definition of Done - Web MVP
-
-Mote Web MVP hoàn thành khi người dùng có thể:
-
-1. Mở app và tạo note ngay.
-2. Tổ chức note bằng group.
-3. Viết các Markdown format đã định nghĩa.
-4. Render Table, Code Block và Mermaid.
-5. Chuyển giữa Text / Markdown View.
-6. Điều hướng note dài bằng Scrollspy trên Desktop.
-7. Search note.
-8. Xóa / khôi phục note.
-9. Ẩn note.
-10. Copy hoặc export Markdown.
-11. Đóng và mở lại app mà dữ liệu vẫn còn.
-12. Sử dụng tốt trên Desktop và Mobile Web.
-
-> Làm xong Web MVP trước. Không để Windows, Android, iOS hoặc Sync làm chậm việc launch phiên bản đầu tiên.
+Feature parity with `mote-old` is not a Definition of Done requirement.
