@@ -117,6 +117,7 @@ mote/
 ## Documentation
 
 - [Product Spec](docs/Product_Spec.md)
+- [Tech Stack](docs/Tech_Stack.md)
 - [Architecture Design](docs/Architecture_Design.md)
 - [Database Design](docs/Database_Design.md)
 - [Data Portability](docs/Data_Portability.md)

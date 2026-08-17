@@ -120,7 +120,7 @@ Conceptually update:
     "config": {
       "owner": "namnth2000",
       "repo_name": "mote",
-      "repo_id": "<NEW_GITHUB_REPO_ID>",
+      "repo_id": "1337080866",
       "production_branch": "main"
     }
   }
