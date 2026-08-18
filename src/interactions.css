@@ -17,6 +17,7 @@
   position: fixed !important;
   top: auto;
   right: auto;
+  width: min(210px, calc(100vw - 16px));
 }
 
 .note-row-wrap {
