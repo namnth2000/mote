@@ -10,6 +10,11 @@ on:
   issues:
     types:
       - opened
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
 
 permissions:
   contents: write
@@ -20,7 +25,10 @@ jobs:
       github.event_name == 'push' ||
       (github.event_name == 'issues' &&
       github.actor == github.repository_owner &&
-      startsWith(github.event.issue.title, '[release] '))
+      startsWith(github.event.issue.title, '[release] ')) ||
+      (github.event_name == 'pull_request' &&
+      github.actor == github.repository_owner &&
+      startsWith(github.event.pull_request.title, '[release] '))
     runs-on: ubuntu-latest
 
     steps:
