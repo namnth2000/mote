@@ -1,5 +1,6 @@
 import './interactions.css';
 import './browser-compat.js';
+import { deleteGroupAndMoveNotesToTrash } from './db.js';
 
 const NOTE_DRAG_TYPE = 'application/x-mote-note-id';
 const COMPACT_MAX = 1199;
@@ -14,7 +15,15 @@ const TEXT = {
     unhide: 'Bỏ ẩn',
     delete: 'Xóa',
     restore: 'Khôi phục',
-    deleteForever: 'Xóa vĩnh viễn'
+    deleteForever: 'Xóa vĩnh viễn',
+    deleteGroupOnly: 'Xóa nhóm',
+    deleteGroupAndNotes: 'Xóa nhóm và ghi chú',
+    confirmDeleteGroupAndNotes: 'Xóa nhóm này và chuyển toàn bộ ghi chú bên trong vào Thùng rác? Bạn có thể khôi phục ghi chú từ Thùng rác trong 30 ngày.',
+    saved: 'Đã lưu',
+    saving: 'Đang lưu...',
+    saveError: 'Lưu thất bại',
+    saveBeforeDeleteFailed: 'Không thể lưu ghi chú hiện tại. Hãy thử lại trước khi xóa nhóm.',
+    deleteGroupFailed: 'Không thể xóa nhóm. Hãy thử lại.'
   },
   en: {
     moreActions: 'Note actions',
@@ -24,7 +33,15 @@ const TEXT = {
     unhide: 'Unhide',
     delete: 'Delete',
     restore: 'Restore',
-    deleteForever: 'Delete forever'
+    deleteForever: 'Delete forever',
+    deleteGroupOnly: 'Delete group',
+    deleteGroupAndNotes: 'Delete group and notes',
+    confirmDeleteGroupAndNotes: 'Delete this group and move all notes inside it to Trash? You can restore the notes from Trash for 30 days.',
+    saved: 'Saved',
+    saving: 'Saving...',
+    saveError: 'Save failed',
+    saveBeforeDeleteFailed: 'Could not save the current note. Try again before deleting the group.',
+    deleteGroupFailed: 'Could not delete the group. Please try again.'
   }
 };
 
@@ -276,7 +293,7 @@ function positionGroupPopover(details) {
   window.requestAnimationFrame(() => {
     if (!details.open) return;
     const rect = summary.getBoundingClientRect();
-    const width = popover.offsetWidth || 148;
+    const width = popover.offsetWidth || 210;
     const margin = 8;
     const left = Math.max(margin, Math.min(rect.right - width, window.innerWidth - width - margin));
     let top = rect.bottom + 4;
@@ -287,10 +304,68 @@ function positionGroupPopover(details) {
   });
 }
 
+async function waitForPendingSave() {
+  const status = document.querySelector('#save-status');
+  const documentShell = document.querySelector('#document-shell');
+  if (!status || documentShell?.hidden) return true;
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true }));
+  const deadline = performance.now() + 2500;
+
+  while (performance.now() < deadline) {
+    const value = status.textContent?.trim();
+    if (value === t('saved')) return true;
+    if (value === t('saveError')) return false;
+    await new Promise((resolve) => window.setTimeout(resolve, 25));
+  }
+
+  return status.textContent?.trim() === t('saved');
+}
+
+async function deleteGroupWithNotes(row, details) {
+  const groupId = row.dataset.groupId;
+  if (!groupId || !window.confirm(t('confirmDeleteGroupAndNotes'))) return;
+  details.removeAttribute('open');
+
+  if (!(await waitForPendingSave())) {
+    window.alert(t('saveBeforeDeleteFailed'));
+    return;
+  }
+
+  try {
+    await deleteGroupAndMoveNotesToTrash(groupId);
+    window.location.reload();
+  } catch (error) {
+    console.error('Delete group with notes failed:', error);
+    window.alert(t('deleteGroupFailed'));
+  }
+}
+
 function enhanceGroups() {
   for (const row of document.querySelectorAll('.group-row[data-group-id]')) {
     bindDropTarget(row, (noteId) => moveNote(noteId, row.dataset.groupId));
     const details = row.querySelector('.group-menu');
+    const popover = details?.querySelector('.group-menu-popover');
+
+    if (popover) {
+      const deleteOnly = popover.querySelector('button.danger:not([data-delete-group-with-notes])');
+      if (deleteOnly) deleteOnly.replaceChildren(icon('trash'), document.createTextNode(t('deleteGroupOnly')));
+
+      if (!popover.querySelector('[data-delete-group-with-notes]')) {
+        const deleteWithNotes = menuButton({
+          label: t('deleteGroupAndNotes'),
+          iconName: 'trash',
+          danger: true,
+          onClick: () => void deleteGroupWithNotes(row, details)
+        });
+        deleteWithNotes.dataset.deleteGroupWithNotes = 'true';
+        popover.append(deleteWithNotes);
+      } else {
+        const deleteWithNotes = popover.querySelector('[data-delete-group-with-notes]');
+        deleteWithNotes.replaceChildren(icon('trash'), document.createTextNode(t('deleteGroupAndNotes')));
+      }
+    }
+
     if (details && details.dataset.portalBound !== 'true') {
       details.dataset.portalBound = 'true';
       details.addEventListener('toggle', () => positionGroupPopover(details));
@@ -337,6 +412,9 @@ const noteList = document.querySelector('#note-list');
 const groupList = document.querySelector('#group-list');
 if (noteList) observer.observe(noteList, { childList: true });
 if (groupList) observer.observe(groupList, { childList: true });
+
+const languageObserver = new MutationObserver(enhanceGroups);
+languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
 bindStaticDropTargets();
 stabilizeMarkdownEditorScroll();
