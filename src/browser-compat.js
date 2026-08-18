@@ -1,4 +1,5 @@
 import './features.js';
+import './task-interactions.js';
 
 const MOBILE_MAX = 760;
 const RUNTIME_CACHE_PREFIX = 'mote-runtime-';

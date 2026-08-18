@@ -1,0 +1,46 @@
+.markdown-preview .mote-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.markdown-preview .mote-task-item {
+  list-style: none;
+}
+
+.markdown-preview .mote-task-item > input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0 8px 0 0;
+  vertical-align: -2px;
+  accent-color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.markdown-preview .mote-task-item > input[type='checkbox']:disabled {
+  cursor: default;
+}
+
+@media (max-width: 760px) {
+  .markdown-preview .mote-task-item > input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    margin-right: 9px;
+    vertical-align: -3px;
+  }
+}
+
+@media print {
+  .print-note-content li:has(> input[type='checkbox']) {
+    list-style: none;
+  }
+
+  .print-note-content ul:has(> li > input[type='checkbox']),
+  .print-note-content ol:has(> li > input[type='checkbox']) {
+    padding-left: 0;
+  }
+
+  .print-note-content li > input[type='checkbox'] {
+    margin: 0 7px 0 0;
+    vertical-align: -1px;
+  }
+}
