@@ -7,17 +7,27 @@ on:
     paths:
       - '.github/releases/**'
       - '.github/workflows/release.yml'
+  issues:
+    types:
+      - opened
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'issues' &&
+      github.actor == github.repository_owner &&
+      startsWith(github.event.issue.title, '[release] '))
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -60,7 +70,7 @@ jobs:
           fi
 
           gh release create "$TAG" \
-            --target "$GITHUB_SHA" \
+            --target "$(git rev-parse HEAD)" \
             --title "Mote $TAG" \
             --notes-file "$NOTES_FILE" \
             --latest
