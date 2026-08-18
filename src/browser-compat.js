@@ -1,48 +1,50 @@
 import spriteMarkup from '../assets/icons/mote-icons.svg?raw';
+import './features.css';
+import './features.js';
 
-const XLINK_NS = 'http://www.w3.org/1999/xlink';
 const ICON_MARKER = 'mote-icons.svg#';
+const MOBILE_MAX = 760;
+const parser = new DOMParser();
+const spriteDocument = parser.parseFromString(spriteMarkup, 'image/svg+xml');
+const symbols = new Map(
+  [...spriteDocument.querySelectorAll('symbol[id]')].map((symbol) => [symbol.id, symbol])
+);
 
-function localizeUse(use) {
-  const href =
-    use.getAttribute('href') ||
-    use.getAttribute('xlink:href') ||
-    use.getAttributeNS(XLINK_NS, 'href');
-
-  if (!href || !href.includes(ICON_MARKER)) return;
-  const id = href.slice(href.lastIndexOf('#') + 1);
-  if (!id) return;
-
-  const localHref = `#${id}`;
-  use.setAttribute('href', localHref);
-  use.setAttributeNS(XLINK_NS, 'xlink:href', localHref);
+function iconId(use) {
+  const href = use.getAttribute('href') || use.getAttribute('xlink:href') || '';
+  if (!href) return null;
+  if (href.includes(ICON_MARKER)) return href.slice(href.lastIndexOf('#') + 1);
+  if (href.startsWith('#')) return href.slice(1);
+  return null;
 }
 
-function localizeIcons(root) {
-  if (root instanceof SVGUseElement) localizeUse(root);
-  root.querySelectorAll?.('use').forEach(localizeUse);
+function hydrateUse(use) {
+  if (!(use instanceof Element) || use.tagName.toLowerCase() !== 'use') return;
+  const id = iconId(use);
+  const symbol = id ? symbols.get(id) : null;
+  const svg = use.closest('svg');
+  if (!id || !symbol || !svg || svg.dataset.iconHydrated === id) return;
+
+  const viewBox = symbol.getAttribute('viewBox');
+  if (viewBox) svg.setAttribute('viewBox', viewBox);
+  const fragment = document.createDocumentFragment();
+  for (const child of symbol.children) fragment.append(child.cloneNode(true));
+  svg.replaceChildren(fragment);
+  svg.dataset.iconHydrated = id;
 }
 
-function installInlineSprite() {
-  if (!document.querySelector('#mote-icon-sprite')) {
-    const template = document.createElement('template');
-    template.innerHTML = spriteMarkup.trim();
-    const sprite = template.content.firstElementChild;
+function hydrateIcons(root) {
+  if (!(root instanceof Element || root instanceof Document)) return;
+  if (root instanceof Element && root.tagName.toLowerCase() === 'use') hydrateUse(root);
+  root.querySelectorAll?.('svg use').forEach(hydrateUse);
+}
 
-    if (sprite instanceof SVGElement) {
-      sprite.id = 'mote-icon-sprite';
-      sprite.setAttribute('aria-hidden', 'true');
-      sprite.setAttribute('focusable', 'false');
-      sprite.style.position = 'absolute';
-      sprite.style.width = '0';
-      sprite.style.height = '0';
-      sprite.style.overflow = 'hidden';
-      sprite.style.pointerEvents = 'none';
-      document.body.prepend(sprite);
-    }
-  }
-
-  localizeIcons(document);
+function installIconStyle() {
+  if (document.querySelector('#mote-inline-icon-style')) return;
+  const style = document.createElement('style');
+  style.id = 'mote-inline-icon-style';
+  style.textContent = '.icon .i{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}';
+  document.head.append(style);
 }
 
 function fixGroupDialogCancel() {
@@ -63,15 +65,62 @@ function fixGroupDialogCancel() {
   );
 }
 
-installInlineSprite();
+function positionToolbarPopover(details) {
+  const popover = details.querySelector(':scope > .toolbar-popover');
+  const summary = details.querySelector(':scope > summary');
+  if (!popover || !summary) return;
+
+  if (!details.open || window.innerWidth > MOBILE_MAX) {
+    popover.classList.remove('mobile-toolbar-popover');
+    popover.style.removeProperty('left');
+    popover.style.removeProperty('top');
+    popover.style.removeProperty('right');
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    if (!details.open || window.innerWidth > MOBILE_MAX) return;
+    popover.classList.add('mobile-toolbar-popover');
+    const anchor = summary.getBoundingClientRect();
+    const width = popover.offsetWidth;
+    const height = popover.offsetHeight;
+    const margin = 8;
+    let left = anchor.left;
+    if (details.classList.contains('more-format-menu')) left = anchor.right - width;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    let top = anchor.bottom + 6;
+    if (top + height > window.innerHeight - margin) top = Math.max(margin, anchor.top - height - 6);
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+    popover.style.right = 'auto';
+  });
+}
+
+function installToolbarMenuFix() {
+  for (const details of document.querySelectorAll('.toolbar-menu')) {
+    if (details.dataset.mobilePopoverBound === 'true') continue;
+    details.dataset.mobilePopoverBound = 'true';
+    details.addEventListener('toggle', () => positionToolbarPopover(details));
+  }
+  window.addEventListener('resize', () => {
+    for (const details of document.querySelectorAll('.toolbar-menu[open]')) positionToolbarPopover(details);
+  });
+}
+
+installIconStyle();
+hydrateIcons(document);
 fixGroupDialogCancel();
+installToolbarMenuFix();
 
 const iconObserver = new MutationObserver((records) => {
   for (const record of records) {
     for (const node of record.addedNodes) {
-      if (node instanceof Element) localizeIcons(node);
+      if (node instanceof Element) hydrateIcons(node);
     }
   }
 });
-
 iconObserver.observe(document.body, { childList: true, subtree: true });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistration().then((registration) => registration?.update()).catch(() => {});
+}
