@@ -1,4 +1,6 @@
 import { createId, getGroups, getNotes, openDatabase, saveGroup, saveNote } from './db.js';
+import { renderMarkdown } from './markdown.js';
+import './features.css';
 
 const TEXT = {
   vi: {
@@ -8,7 +10,7 @@ const TEXT = {
     exportMarkdown: 'Export .md',
     exportText: 'Export .txt',
     exportPdf: 'Export .pdf',
-    creatingPdf: 'Đang tạo PDF...',
+    openingPdf: 'Đang mở bản PDF...',
     exportFailed: 'Export thất bại.'
   },
   en: {
@@ -18,7 +20,7 @@ const TEXT = {
     exportMarkdown: 'Export .md',
     exportText: 'Export .txt',
     exportPdf: 'Export .pdf',
-    creatingPdf: 'Creating PDF...',
+    openingPdf: 'Opening PDF preview...',
     exportFailed: 'Export failed.'
   }
 };
@@ -129,6 +131,54 @@ function exportMenuButton(label, extension, onClick) {
   return button;
 }
 
+function ensurePrintRoot() {
+  let root = document.querySelector('#mote-print-root');
+  if (root) return root;
+
+  root = document.createElement('section');
+  root.id = 'mote-print-root';
+  root.setAttribute('aria-hidden', 'true');
+
+  const title = document.createElement('h1');
+  title.className = 'print-note-title';
+  const content = document.createElement('article');
+  content.className = 'print-note-content';
+  root.append(title, content);
+  document.body.append(root);
+  return root;
+}
+
+async function exportRichPdf(note) {
+  const root = ensurePrintRoot();
+  const title = root.querySelector('.print-note-title');
+  const content = root.querySelector('.print-note-content');
+  if (!title || !content) throw new Error('Print root is unavailable.');
+
+  toast(t('openingPdf'));
+  title.textContent = note.title;
+  content.replaceChildren();
+  await renderMarkdown(note.markdown, content, { theme: 'light' });
+
+  const previousTitle = document.title;
+  document.title = safeFileName(note.title);
+  document.documentElement.classList.add('mote-print-ready');
+
+  const cleanup = () => {
+    document.documentElement.classList.remove('mote-print-ready');
+    document.title = previousTitle;
+  };
+
+  window.addEventListener('afterprint', cleanup, { once: true });
+
+  await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+  window.print();
+
+  // Safari may not always dispatch afterprint when the sheet is dismissed.
+  window.setTimeout(() => {
+    if (document.documentElement.classList.contains('mote-print-ready')) cleanup();
+  }, 60000);
+}
+
 function openExportMenu(anchor) {
   closeExportMenu();
   const note = currentNoteSnapshot();
@@ -147,9 +197,7 @@ function openExportMenu(anchor) {
     }),
     exportMenuButton(t('exportPdf'), '.pdf', async () => {
       try {
-        toast(t('creatingPdf'));
-        const pdf = await createPdfBlob(note.title, markdownToText(note.markdown));
-        downloadBlob(pdf, `${safeFileName(note.title)}.pdf`, 'application/pdf');
+        await exportRichPdf(note);
       } catch (error) {
         console.error(error);
         toast(t('exportFailed'));
@@ -270,176 +318,6 @@ function installExportMenu() {
     },
     true
   );
-}
-
-function wrapText(ctx, text, maxWidth) {
-  if (!text) return [''];
-  const words = text.split(/\s+/);
-  const lines = [];
-  let line = '';
-
-  for (const word of words) {
-    const candidate = line ? `${line} ${word}` : word;
-    if (ctx.measureText(candidate).width <= maxWidth) {
-      line = candidate;
-      continue;
-    }
-    if (line) lines.push(line);
-    if (ctx.measureText(word).width <= maxWidth) {
-      line = word;
-      continue;
-    }
-
-    let piece = '';
-    for (const char of word) {
-      const next = piece + char;
-      if (piece && ctx.measureText(next).width > maxWidth) {
-        lines.push(piece);
-        piece = char;
-      } else {
-        piece = next;
-      }
-    }
-    line = piece;
-  }
-  if (line) lines.push(line);
-  return lines.length ? lines : [''];
-}
-
-async function canvasToJpeg(canvas) {
-  const blob = await new Promise((resolve, reject) => {
-    canvas.toBlob((value) => value ? resolve(value) : reject(new Error('Could not encode PDF page.')), 'image/jpeg', 0.9);
-  });
-  return new Uint8Array(await blob.arrayBuffer());
-}
-
-async function createPdfPages(title, body) {
-  if (document.fonts?.ready) await document.fonts.ready;
-
-  const width = 1240;
-  const height = 1754;
-  const marginX = 100;
-  const marginTop = 105;
-  const marginBottom = 105;
-  const maxWidth = width - marginX * 2;
-  const bodyFont = "30px Inter, Arial, sans-serif";
-  const bodyLineHeight = 44;
-  const pages = [];
-
-  let canvas;
-  let ctx;
-  let y;
-
-  function newPage() {
-    canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    ctx = canvas.getContext('2d', { alpha: false });
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#171717';
-    ctx.textBaseline = 'top';
-    y = marginTop;
-  }
-
-  async function flushPage() {
-    pages.push(await canvasToJpeg(canvas));
-  }
-
-  async function ensureSpace(required) {
-    if (y + required <= height - marginBottom) return;
-    await flushPage();
-    newPage();
-  }
-
-  newPage();
-  ctx.font = "700 50px Inter, Arial, sans-serif";
-  for (const line of wrapText(ctx, title || 'Untitled', maxWidth)) {
-    await ensureSpace(64);
-    ctx.fillText(line, marginX, y);
-    y += 64;
-  }
-  y += 22;
-
-  ctx.font = bodyFont;
-  for (const rawLine of (body || '').split('\n')) {
-    if (!rawLine.trim()) {
-      await ensureSpace(bodyLineHeight);
-      y += bodyLineHeight * 0.7;
-      continue;
-    }
-    for (const line of wrapText(ctx, rawLine, maxWidth)) {
-      await ensureSpace(bodyLineHeight);
-      ctx.fillText(line, marginX, y);
-      y += bodyLineHeight;
-    }
-  }
-
-  await flushPage();
-  return { pages, width, height };
-}
-
-function ascii(value) {
-  return new TextEncoder().encode(value);
-}
-
-function byteLength(chunks) {
-  return chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-}
-
-function createPdfBinary(jpegs, width, height) {
-  const pageWidth = 595.28;
-  const pageHeight = 841.89;
-  const objects = new Map();
-  const pageObjectNumbers = [];
-
-  objects.set(1, [ascii('<< /Type /Catalog /Pages 2 0 R >>')]);
-
-  for (let index = 0; index < jpegs.length; index += 1) {
-    const imageNumber = 3 + index * 3;
-    const contentNumber = imageNumber + 1;
-    const pageNumber = imageNumber + 2;
-    const jpeg = jpegs[index];
-    const content = ascii(`q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im0 Do\nQ\n`);
-
-    objects.set(imageNumber, [
-      ascii(`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`),
-      jpeg,
-      ascii('\nendstream')
-    ]);
-    objects.set(contentNumber, [ascii(`<< /Length ${content.length} >>\nstream\n`), content, ascii('endstream')]);
-    objects.set(pageNumber, [ascii(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 ${imageNumber} 0 R >> >> /Contents ${contentNumber} 0 R >>`)]);
-    pageObjectNumbers.push(pageNumber);
-  }
-
-  objects.set(2, [ascii(`<< /Type /Pages /Count ${pageObjectNumbers.length} /Kids [${pageObjectNumbers.map((number) => `${number} 0 R`).join(' ')}] >>`)]);
-
-  const maxObject = Math.max(...objects.keys());
-  const chunks = [ascii('%PDF-1.4\n%Mote\n')];
-  const offsets = new Array(maxObject + 1).fill(0);
-  let position = byteLength(chunks);
-
-  for (let number = 1; number <= maxObject; number += 1) {
-    offsets[number] = position;
-    const objectChunks = [ascii(`${number} 0 obj\n`), ...(objects.get(number) ?? []), ascii('\nendobj\n')];
-    chunks.push(...objectChunks);
-    position += byteLength(objectChunks);
-  }
-
-  const xrefPosition = position;
-  let xref = `xref\n0 ${maxObject + 1}\n0000000000 65535 f \n`;
-  for (let number = 1; number <= maxObject; number += 1) {
-    xref += `${String(offsets[number]).padStart(10, '0')} 00000 n \n`;
-  }
-  xref += `trailer\n<< /Size ${maxObject + 1} /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF\n`;
-  chunks.push(ascii(xref));
-
-  return new Blob(chunks, { type: 'application/pdf' });
-}
-
-async function createPdfBlob(title, body) {
-  const { pages, width, height } = await createPdfPages(title, body);
-  return createPdfBinary(pages, width, height);
 }
 
 installFolderImport();
