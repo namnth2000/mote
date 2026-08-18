@@ -9,6 +9,10 @@
   display: none !important;
 }
 
+#markdown-editor {
+  overflow-anchor: none;
+}
+
 .group-menu-popover {
   position: fixed !important;
   top: auto;

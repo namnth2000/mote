@@ -38,10 +38,20 @@ function assignHeadingIds(container) {
   return headings;
 }
 
+function showMermaidFallback(diagram, source) {
+  diagram.classList.add('mermaid-error');
+  const fallback = document.createElement('pre');
+  const fallbackCode = document.createElement('code');
+  fallbackCode.textContent = source;
+  fallback.append(fallbackCode);
+  diagram.replaceChildren(fallback);
+}
+
 async function renderMermaidBlocks(container, theme) {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
+    suppressErrorRendering: true,
     theme: theme === 'dark' ? 'dark' : 'default',
     fontFamily: 'Inter, system-ui, sans-serif'
   });
@@ -57,6 +67,12 @@ async function renderMermaidBlocks(container, theme) {
     diagram.className = 'mermaid-diagram';
     pre.replaceWith(diagram);
 
+    const parsed = await mermaid.parse(source, { suppressErrors: true });
+    if (!parsed) {
+      showMermaidFallback(diagram, source);
+      continue;
+    }
+
     try {
       const id = `mote-mermaid-${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
       const { svg } = await mermaid.render(id, source);
@@ -65,12 +81,7 @@ async function renderMermaidBlocks(container, theme) {
         ADD_TAGS: ['foreignObject']
       });
     } catch (error) {
-      diagram.classList.add('mermaid-error');
-      const fallback = document.createElement('pre');
-      const fallbackCode = document.createElement('code');
-      fallbackCode.textContent = source;
-      fallback.append(fallbackCode);
-      diagram.replaceChildren(fallback);
+      showMermaidFallback(diagram, source);
       console.warn('Mermaid render failed:', error);
     }
   }
