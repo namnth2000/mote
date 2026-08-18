@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mote-runtime-v2';
+const CACHE_NAME = 'mote-runtime-v3';
 const APP_SHELL = [
   '/',
   '/manifest.webmanifest',
