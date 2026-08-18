@@ -1,4 +1,5 @@
 import './interactions.css';
+import './browser-compat.js';
 
 const NOTE_DRAG_TYPE = 'application/x-mote-note-id';
 const COMPACT_MAX = 1199;
@@ -165,7 +166,9 @@ function openNoteMenu(trigger, noteId) {
     for (const group of groupTargets()) {
       menu.append(menuButton({ label: group.name, iconName: 'folder', onClick: () => moveNote(noteId, group.id) }));
     }
-    menu.append(document.createElement('div')).className = 'popover-separator';
+    const separator = document.createElement('div');
+    separator.className = 'popover-separator';
+    menu.append(separator);
     menu.append(
       menuButton({
         label: collection === 'hidden' ? t('unhide') : t('hide'),
