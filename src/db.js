@@ -100,6 +100,31 @@ export async function deleteGroupAndMoveNotesToInbox(groupId) {
   await transactionDone(transaction);
 }
 
+export async function deleteGroupAndMoveNotesToTrash(groupId) {
+  const db = await openDatabase();
+  const transaction = db.transaction(['groups', 'notes'], 'readwrite');
+  const groupsStore = transaction.objectStore('groups');
+  const notesStore = transaction.objectStore('notes');
+  const notesRequest = notesStore.getAll();
+
+  notesRequest.onsuccess = () => {
+    const now = new Date().toISOString();
+    for (const note of notesRequest.result) {
+      if (note.groupId === groupId) {
+        notesStore.put({
+          ...note,
+          groupId: null,
+          deletedAt: note.deletedAt ?? now,
+          updatedAt: now
+        });
+      }
+    }
+    groupsStore.delete(groupId);
+  };
+
+  await transactionDone(transaction);
+}
+
 export async function getNotes() {
   return getAll('notes');
 }
