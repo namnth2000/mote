@@ -6,6 +6,19 @@ All notable changes to Mote are documented in this file.
 
 No unreleased changes yet.
 
+## [1.0.1] - 2026-08-20
+
+### Added
+
+- Added a `Delete group and notes` action that moves notes in the deleted group to Trash while preserving the existing `Delete group only` behavior that moves notes to Inbox.
+
+### Fixed
+
+- Reduced large Markdown editor scroll jumps caused by textarea auto-resizing while typing.
+- Kept invalid or unsupported Mermaid blocks isolated as inline fallback content instead of allowing global Mermaid syntax errors to disrupt the interface.
+- Improved Markdown Preview vertical spacing so headings and sections are easier to distinguish while consecutive headings remain visually grouped.
+- Kept the mobile save status and Favorite button on the same row for a more compact note header.
+
 ## [1.0.0] - 2026-08-18
 
 ### Added
