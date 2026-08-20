@@ -136,3 +136,28 @@
     opacity: 1;
   }
 }
+
+/* Keep Markdown preview sections visually distinct without changing editor layout. */
+.markdown-preview p {
+  margin-bottom: 14px;
+}
+
+.markdown-preview h1 {
+  margin: 36px 0 12px;
+}
+
+.markdown-preview h2 {
+  margin: 30px 0 10px;
+}
+
+.markdown-preview h3 {
+  margin: 24px 0 8px;
+}
+
+.markdown-preview h4 {
+  margin: 20px 0 6px;
+}
+
+.markdown-preview :is(h1, h2, h3, h4) + :is(h1, h2, h3, h4) {
+  margin-top: 10px;
+}
