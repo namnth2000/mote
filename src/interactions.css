@@ -161,3 +161,18 @@
 .markdown-preview :is(h1, h2, h3, h4) + :is(h1, h2, h3, h4) {
   margin-top: 10px;
 }
+
+@media (max-width: 760px) {
+  .document-meta-row {
+    align-items: center;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .note-actions {
+    width: auto;
+    margin-left: 0;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+}
