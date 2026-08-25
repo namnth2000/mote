@@ -21,17 +21,30 @@ test('Markdown typing guards against large scroll jumps caused by auto-resize', 
   assert.match(interactionsCss, /#markdown-editor\s*\{[\s\S]*?overflow-anchor:\s*none/);
 });
 
-test('view switching preserves normalized document scroll progress after layout settles', () => {
-  assert.match(browserCompatSource, /function installEditorViewScrollPreservation\(\)/);
-  assert.match(browserCompatSource, /scrollTop\s*\/\s*maxScrollTop/);
-  assert.match(browserCompatSource, /new MutationObserver\(scheduleRestore\)/);
-  assert.match(browserCompatSource, /attributeFilter:\s*\['hidden', 'style'\]/);
-  assert.match(browserCompatSource, /requestAnimationFrame/);
-  assert.match(browserCompatSource, /installEditorViewScrollPreservation\(\)/);
+test('Preview exposes source-line anchors including table rows', () => {
+  assert.match(markdownSource, /marked\.lexer\(source \|\| ''\)/);
+  assert.match(markdownSource, /dataset\.sourceLine\s*=\s*String\(startLine\)/);
+  assert.match(markdownSource, /function assignTableSourceLines\(/);
+  assert.match(markdownSource, /rows\[index\]\.dataset\.sourceLine/);
+  assert.match(markdownSource, /container\.dataset\.renderRevision\s*=\s*revision/);
 });
 
-test('mobile keeps group actions reachable without replacing the existing group menu', () => {
-  assert.match(interactionsCss, /@media \(max-width: 760px\)[\s\S]*?\.group-row > \.group-menu\s*\{[\s\S]*?display:\s*block !important/);
-  assert.match(interactionsCss, /@media \(max-width: 760px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) 36px/);
-  assert.match(interactionsCss, /\.group-menu > summary\s*\{[\s\S]*?width:\s*36px;[\s\S]*?height:\s*36px/);
+test('view switching restores the source line once instead of continuously correcting scroll', () => {
+  assert.match(browserCompatSource, /function installEditorViewSourceLineSync\(\)/);
+  assert.match(browserCompatSource, /previewSourceLineAtTop\(scroller\)/);
+  assert.match(browserCompatSource, /markdownSourceLineAtTop\(scroller, textarea\)/);
+  assert.match(browserCompatSource, /scrollSourceLineToTop\(scroller, targetView, anchor\)/);
+  assert.match(browserCompatSource, /preview\.dataset\.renderRevision/);
+  assert.doesNotMatch(browserCompatSource, /VIEW_SCROLL_RESTORE_WINDOW/);
+  assert.doesNotMatch(browserCompatSource, /new MutationObserver/);
+});
+
+test('mobile opens the existing group menu with a long press without showing the ellipsis', () => {
+  assert.match(browserCompatSource, /GROUP_LONG_PRESS_MS\s*=\s*500/);
+  assert.match(browserCompatSource, /function installMobileGroupLongPress\(\)/);
+  assert.match(browserCompatSource, /openMobileGroupMenu\(row\)/);
+  assert.match(browserCompatSource, /GROUP_LONG_PRESS_MOVE_PX/);
+  assert.match(interactionsCss, /\.group-menu\.mobile-longpress-open\s*\{[\s\S]*?display:\s*block !important/);
+  assert.match(interactionsCss, /\.mobile-longpress-open > summary\s*\{[\s\S]*?display:\s*none/);
+  assert.doesNotMatch(interactionsCss, /grid-template-columns:\s*minmax\(0, 1fr\) 36px/);
 });
