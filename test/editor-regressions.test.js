@@ -15,12 +15,14 @@ test('invalid Mermaid blocks are rejected before render without a global error d
   assert.match(markdownSource, /if \(!parsed\)[\s\S]*?showMermaidFallback\(diagram, source\)/);
 });
 
-test('focused Markdown editor grows without collapsing or overriding scroll', () => {
+test('mobile Markdown editor stays grow-only through typing and keyboard resize', () => {
   assert.match(appSource, /function resizeMarkdownEditor\(\{ force = false \} = \{\}\)/);
-  assert.match(appSource, /document\.activeElement === textarea && state\.settings\.editor_view === 'markdown'/);
+  assert.match(appSource, /const mobileMarkdown = window\.innerWidth <= MOBILE_MAX && markdownMode/);
+  assert.match(appSource, /if \(!force && \(focusedMarkdown \|\| mobileMarkdown\)\)[\s\S]*?return;[\s\S]*?textarea\.style\.height = 'auto'/);
   assert.match(appSource, /textarea\.scrollHeight - textarea\.clientHeight/);
-  assert.match(appSource, /if \(focusedMarkdown && !force\)[\s\S]*?return;[\s\S]*?textarea\.style\.height = 'auto'/);
-  assert.match(appSource, /addEventListener\('blur', \(\) => resizeMarkdownEditor\(\{ force: true \}\)\)/);
+  assert.doesNotMatch(appSource, /markdownEditor\.addEventListener\('blur'/);
+  assert.match(appSource, /queueMicrotask\(\(\) => resizeMarkdownEditor\(\{ force: true \}\)\)/);
+  assert.match(appSource, /window\.addEventListener\('resize', \(\) => \{\s*resizeMarkdownEditor\(\)/);
   assert.doesNotMatch(interactionsSource, /protectMarkdownEditorHeightDuringInsertion/);
   assert.doesNotMatch(interactionsSource, /stabilizeMarkdownEditorScroll/);
   assert.doesNotMatch(interactionsSource, /scrollTop/);
