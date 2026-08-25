@@ -27,6 +27,34 @@ test('checkbox prefixes all selected lines', () => {
   assert.equal(result.text, '- [ ] one\n- [ ] two');
 });
 
+test('Tab indent inserts two spaces at the caret', () => {
+  const result = formatSelection({ text: 'ab', start: 1, end: 1 }, 'indent');
+  assert.equal(result.text, 'a  b');
+  assert.equal(result.start, 3);
+  assert.equal(result.end, 3);
+});
+
+test('Tab indent prefixes selected lines without including the next unselected line', () => {
+  const source = 'one\ntwo\nthree';
+  const result = formatSelection({ text: source, start: 0, end: 'one\ntwo\n'.length }, 'indent');
+  assert.equal(result.text, '  one\n  two\nthree');
+  assert.equal(result.text.slice(result.start, result.end), '  one\n  two');
+});
+
+test('Shift+Tab removes up to two leading spaces from selected lines', () => {
+  const source = '  one\n two\nthree';
+  const result = formatSelection({ text: source, start: 0, end: source.length }, 'outdent');
+  assert.equal(result.text, 'one\ntwo\nthree');
+  assert.equal(result.text.slice(result.start, result.end), 'one\ntwo\nthree');
+});
+
+test('Shift+Tab outdents the current line and keeps the caret aligned', () => {
+  const result = formatSelection({ text: '  item', start: 6, end: 6 }, 'outdent');
+  assert.equal(result.text, 'item');
+  assert.equal(result.start, 4);
+  assert.equal(result.end, 4);
+});
+
 test('mermaid inserts a ready-to-edit fenced diagram block', () => {
   const result = formatSelection({ text: '', start: 0, end: 0 }, 'mermaid');
   assert.match(result.text, /^```mermaid\n/);

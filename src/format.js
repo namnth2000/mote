@@ -1,3 +1,5 @@
+const TAB_INDENT = '  ';
+
 function normalizeSelection(text, start, end) {
   const safeStart = Math.max(0, Math.min(start ?? text.length, text.length));
   const safeEnd = Math.max(safeStart, Math.min(end ?? safeStart, text.length));
@@ -28,6 +30,14 @@ function selectedLineRange(text, start, end) {
   return { lineStart, lineEnd };
 }
 
+function selectedIndentLineRange(text, start, end) {
+  const lineStart = text.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+  const effectiveEnd = end > start && text[end - 1] === '\n' ? end - 1 : end;
+  const nextLineBreak = text.indexOf('\n', effectiveEnd);
+  const lineEnd = nextLineBreak === -1 ? text.length : nextLineBreak;
+  return { lineStart, lineEnd };
+}
+
 function prefixLines(state, prefixFactory) {
   const { text } = state;
   const { start, end } = normalizeSelection(text, state.start, state.end);
@@ -35,6 +45,41 @@ function prefixLines(state, prefixFactory) {
   const block = text.slice(lineStart, lineEnd);
   const transformed = block.split('\n').map((line, index) => `${prefixFactory(index, line)}${line}`).join('\n');
   return replaceRange(text, lineStart, lineEnd, transformed, start - lineStart, transformed.length);
+}
+
+function indentSelection(state) {
+  const { text } = state;
+  const { start, end } = normalizeSelection(text, state.start, state.end);
+
+  if (start === end) return replaceRange(text, start, end, TAB_INDENT, TAB_INDENT.length, TAB_INDENT.length);
+
+  const { lineStart, lineEnd } = selectedIndentLineRange(text, start, end);
+  const block = text.slice(lineStart, lineEnd);
+  const transformed = block.split('\n').map((line) => `${TAB_INDENT}${line}`).join('\n');
+  return replaceRange(text, lineStart, lineEnd, transformed, 0, transformed.length);
+}
+
+function leadingSpaceCount(line) {
+  if (line.startsWith(TAB_INDENT)) return TAB_INDENT.length;
+  return line.startsWith(' ') ? 1 : 0;
+}
+
+function outdentSelection(state) {
+  const { text } = state;
+  const { start, end } = normalizeSelection(text, state.start, state.end);
+  const { lineStart, lineEnd } = selectedIndentLineRange(text, start, end);
+  const block = text.slice(lineStart, lineEnd);
+
+  if (start === end) {
+    const removeCount = leadingSpaceCount(block);
+    if (!removeCount) return { text, start, end };
+    const transformed = block.slice(removeCount);
+    const caret = Math.max(0, start - lineStart - removeCount);
+    return replaceRange(text, lineStart, lineEnd, transformed, caret, caret);
+  }
+
+  const transformed = block.split('\n').map((line) => line.slice(leadingSpaceCount(line))).join('\n');
+  return replaceRange(text, lineStart, lineEnd, transformed, 0, transformed.length);
 }
 
 function heading(state, level) {
@@ -109,6 +154,8 @@ export function formatSelection(state, command) {
     case 'bullet': return prefixLines(state, () => '- ');
     case 'numbered': return prefixLines(state, (index) => `${index + 1}. `);
     case 'checkbox': return prefixLines(state, () => '- [ ] ');
+    case 'indent': return indentSelection(state);
+    case 'outdent': return outdentSelection(state);
     case 'h1': return heading(state, 1);
     case 'h2': return heading(state, 2);
     case 'h3': return heading(state, 3);
