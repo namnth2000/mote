@@ -4,7 +4,6 @@ import { deleteGroupAndMoveNotesToTrash } from './db.js';
 
 const NOTE_DRAG_TYPE = 'application/x-mote-note-id';
 const COMPACT_MAX = 1199;
-const MAX_EDITOR_SCROLL_ADJUSTMENT = 72;
 
 const TEXT = {
   vi: {
@@ -378,21 +377,22 @@ function bindStaticDropTargets() {
   bindDropTarget(document.querySelector('.nav-item[data-collection="inbox"]'), (noteId) => moveNote(noteId, null));
 }
 
-function stabilizeMarkdownEditorScroll() {
+function protectMarkdownEditorHeightDuringInsertion() {
   const editor = document.querySelector('#markdown-editor');
-  const scroller = document.querySelector('.document-main');
-  if (!editor || !scroller) return;
+  if (!editor) return;
 
-  let scrollTopBeforeInput = scroller.scrollTop;
-  let restoreFrame = null;
-  let protectEditorHeight = false;
+  let heightProtected = false;
+
+  const clearProtection = () => {
+    heightProtected = false;
+    editor.style.removeProperty('min-height');
+  };
 
   editor.addEventListener(
     'beforeinput',
     (event) => {
-      scrollTopBeforeInput = scroller.scrollTop;
-      protectEditorHeight = typeof event.inputType === 'string' && event.inputType.startsWith('insert');
-      if (!protectEditorHeight) return;
+      heightProtected = typeof event.inputType === 'string' && event.inputType.startsWith('insert');
+      if (!heightProtected) return;
 
       const currentHeight = editor.getBoundingClientRect().height;
       if (currentHeight > 0) editor.style.minHeight = `${Math.ceil(currentHeight)}px`;
@@ -401,21 +401,10 @@ function stabilizeMarkdownEditorScroll() {
   );
 
   editor.addEventListener('input', () => {
-    const expectedScrollTop = scrollTopBeforeInput;
-
-    if (protectEditorHeight) {
-      protectEditorHeight = false;
-      queueMicrotask(() => editor.style.removeProperty('min-height'));
-    }
-
-    if (restoreFrame != null) window.cancelAnimationFrame(restoreFrame);
-    restoreFrame = window.requestAnimationFrame(() => {
-      restoreFrame = null;
-      if (Math.abs(scroller.scrollTop - expectedScrollTop) <= MAX_EDITOR_SCROLL_ADJUSTMENT) return;
-      const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-      scroller.scrollTop = Math.min(expectedScrollTop, maxScrollTop);
-    });
+    if (!heightProtected) return;
+    queueMicrotask(clearProtection);
   });
+  editor.addEventListener('blur', clearProtection);
 }
 
 function enhanceDynamicUi() {
@@ -433,7 +422,7 @@ const languageObserver = new MutationObserver(enhanceGroups);
 languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
 bindStaticDropTargets();
-stabilizeMarkdownEditorScroll();
+protectMarkdownEditorHeightDuringInsertion();
 enhanceDynamicUi();
 
 document.addEventListener('click', (event) => {
