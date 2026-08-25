@@ -14,18 +14,15 @@ test('invalid Mermaid blocks are rejected before render without a global error d
   assert.match(markdownSource, /if \(!parsed\)[\s\S]*?showMermaidFallback\(diagram, source\)/);
 });
 
-test('Markdown typing guards against large scroll jumps caused by auto-resize', () => {
-  assert.match(interactionsSource, /function stabilizeMarkdownEditorScroll\(\)/);
+test('Markdown insertion protects editor height without overriding native scroll', () => {
+  assert.match(interactionsSource, /function protectMarkdownEditorHeightDuringInsertion\(\)/);
   assert.match(interactionsSource, /addEventListener\([\s\S]*?'beforeinput'/);
-  assert.match(interactionsSource, /MAX_EDITOR_SCROLL_ADJUSTMENT/);
-  assert.match(interactionsSource, /requestAnimationFrame/);
-  assert.match(interactionsCss, /#markdown-editor\s*\{[\s\S]*?overflow-anchor:\s*none/);
-});
-
-test('Markdown insertions keep the focused textarea from transiently collapsing during resize', () => {
   assert.match(interactionsSource, /event\.inputType\.startsWith\('insert'\)/);
   assert.match(interactionsSource, /editor\.style\.minHeight\s*=\s*`\$\{Math\.ceil\(currentHeight\)\}px`/);
-  assert.match(interactionsSource, /queueMicrotask\(\(\) => editor\.style\.removeProperty\('min-height'\)\)/);
+  assert.match(interactionsSource, /queueMicrotask\(clearProtection\)/);
+  assert.doesNotMatch(interactionsSource, /function stabilizeMarkdownEditorScroll\(\)/);
+  assert.doesNotMatch(interactionsSource, /MAX_EDITOR_SCROLL_ADJUSTMENT/);
+  assert.match(interactionsCss, /#markdown-editor\s*\{[\s\S]*?overflow-anchor:\s*none/);
 });
 
 test('Preview exposes source-line anchors including table rows', () => {
