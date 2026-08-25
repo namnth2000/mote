@@ -39,6 +39,16 @@ test('Tab indentation is scoped to the Markdown textarea and feeds the normal in
   assert.match(markdownKeyboardSource, /dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\)/);
 });
 
+test('Settings keeps the shared toast region inside the modal top layer while open', () => {
+  assert.match(browserCompatSource, /function installSettingsToastTopLayerFix\(\)/);
+  assert.match(browserCompatSource, /document\.querySelector\('#settings-dialog'\)/);
+  assert.match(browserCompatSource, /document\.querySelector\('#toast-region'\)/);
+  assert.match(browserCompatSource, /dialog\.append\(toastRegion\)/);
+  assert.match(browserCompatSource, /openSettings\.addEventListener\('click', \(\) => queueMicrotask\(moveIntoDialog\)\)/);
+  assert.match(browserCompatSource, /dialog\.addEventListener\('close', moveBack\)/);
+  assert.match(browserCompatSource, /installSettingsToastTopLayerFix\(\)/);
+});
+
 test('Preview exposes source-line anchors including table rows', () => {
   assert.match(markdownSource, /marked\.lexer\(source \|\| ''\)/);
   assert.match(markdownSource, /dataset\.sourceLine\s*=\s*String\(startLine\)/);
