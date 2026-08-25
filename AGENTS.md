@@ -59,6 +59,14 @@ Use the checks relevant to the change. Do not automatically run every check for 
 - If the user starts scrolling or touching before a pending restore runs, user input wins and the pending restore should be cancelled.
 - Preserve the existing Markdown typing scroll stabilization in `src/interactions.js`; view switching must not interfere with selection, typing or textarea resize behavior.
 
+## Markdown editor typing stability
+
+- While the Markdown editor is focused, typing and paste must not make the document viewport jump unexpectedly.
+- `resizeMarkdownEditor()` currently measures with a transient `height: auto`. During insertion input, `src/interactions.js` temporarily pins the textarea's current `min-height` through the input event so the live editor cannot collapse before its final height is applied.
+- Keep this protection limited to insertion input so delete/cut operations can still shrink the editor normally.
+- Do not solve typing scroll bugs with long-lived observers, repeated timers or continuous scroll correction. Preserve native caret reveal when the caret genuinely leaves the visible area.
+- Clipboard, selection, caret, textarea auto-resize and mobile keyboard behavior are especially regression-prone on Safari/iOS and should be manually verified when touched.
+
 ## Mobile Group actions
 
 - On mobile (`<= 760px`), a normal tap on a Group folder opens the Group.
@@ -99,5 +107,7 @@ For editor or Group interaction changes near the decisions above, manually verif
 
 - Preview <-> Markdown switching in a long note, especially with a table near the top of the viewport.
 - Immediate manual scroll after switching is not pulled back.
+- On mobile Markdown editing, type in the middle of a long note and paste several lines; the viewport should stay stable while the caret remains visible.
+- On mobile Markdown editing, delete/cut enough text to shrink the note and confirm the editor can still shrink normally.
 - Mobile Group tap opens the Group, long press opens actions and finger movement still scrolls normally.
 - Enter saves both Create Group and Rename Group dialogs, while Cancel does not save.
