@@ -4,6 +4,10 @@ All notable changes to Mote are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added Markdown editor Tab indentation: Tab inserts two spaces at the caret or indents selected lines, while Shift+Tab removes up to two leading spaces from the current or selected lines.
+
 ### Fixed
 
 - Kept the Markdown source line nearest the top of the viewport near the top when switching between Preview and Markdown, including finer mapping for table rows and list items.

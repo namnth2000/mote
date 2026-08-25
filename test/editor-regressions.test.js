@@ -5,6 +5,7 @@ import test from 'node:test';
 const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 const markdownSource = readFileSync(new URL('../src/markdown.js', import.meta.url), 'utf8');
+const markdownKeyboardSource = readFileSync(new URL('../src/markdown-keyboard.js', import.meta.url), 'utf8');
 const interactionsSource = readFileSync(new URL('../src/interactions.js', import.meta.url), 'utf8');
 const browserCompatSource = readFileSync(new URL('../src/browser-compat.js', import.meta.url), 'utf8');
 const interactionsCss = readFileSync(new URL('../src/interactions.css', import.meta.url), 'utf8');
@@ -27,6 +28,15 @@ test('mobile Markdown editor stays grow-only through typing and keyboard resize'
   assert.doesNotMatch(interactionsSource, /stabilizeMarkdownEditorScroll/);
   assert.doesNotMatch(interactionsSource, /scrollTop/);
   assert.match(interactionsCss, /#markdown-editor\s*\{[\s\S]*?overflow-anchor:\s*none/);
+});
+
+test('Tab indentation is scoped to the Markdown textarea and feeds the normal input flow', () => {
+  assert.match(indexSource, /<script type="module" src="\/src\/markdown-keyboard\.js"><\/script>/);
+  assert.match(markdownKeyboardSource, /document\.querySelector\('#markdown-editor'\)/);
+  assert.match(markdownKeyboardSource, /event\.key !== 'Tab'/);
+  assert.match(markdownKeyboardSource, /event\.preventDefault\(\)/);
+  assert.match(markdownKeyboardSource, /event\.shiftKey \? 'outdent' : 'indent'/);
+  assert.match(markdownKeyboardSource, /dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\)/);
 });
 
 test('Preview exposes source-line anchors including table rows', () => {
