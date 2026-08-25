@@ -57,14 +57,15 @@ Use the checks relevant to the change. Do not automatically run every check for 
 - Preview blocks carry `data-source-line` metadata. Tables map individual rows and lists map individual items where possible because rendered heights can differ significantly from Markdown source.
 - Restore the target position once after the destination view is ready. Do not continuously correct scroll with a long-lived `MutationObserver`, timer or repeated percentage restore.
 - If the user starts scrolling or touching before a pending restore runs, user input wins and the pending restore should be cancelled.
-- Preserve the existing Markdown typing scroll stabilization in `src/interactions.js`; view switching must not interfere with selection, typing or textarea resize behavior.
+- View switching must not interfere with native input scrolling, selection, typing or textarea resize behavior.
 
 ## Markdown editor typing stability
 
 - While the Markdown editor is focused, typing and paste must not make the document viewport jump unexpectedly.
 - `resizeMarkdownEditor()` currently measures with a transient `height: auto`. During insertion input, `src/interactions.js` temporarily pins the textarea's current `min-height` through the input event so the live editor cannot collapse before its final height is applied.
 - Keep this protection limited to insertion input so delete/cut operations can still shrink the editor normally.
-- Do not solve typing scroll bugs with long-lived observers, repeated timers or continuous scroll correction. Preserve native caret reveal when the caret genuinely leaves the visible area.
+- Do not restore `.document-main.scrollTop` after normal typing or paste. A delayed restore can fight Safari/iOS native caret reveal and move the active line even when the browser is already keeping the caret visible.
+- Do not solve typing scroll bugs with long-lived observers, repeated timers or continuous scroll correction. Native caret visibility and direct user scrolling take priority.
 - Clipboard, selection, caret, textarea auto-resize and mobile keyboard behavior are especially regression-prone on Safari/iOS and should be manually verified when touched.
 
 ## Mobile Group actions
