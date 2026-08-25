@@ -4,7 +4,12 @@ All notable changes to Mote are documented in this file.
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Fixed
+
+- Kept the Markdown source line nearest the top of the viewport near the top when switching between Preview and Markdown, including finer mapping for table rows and list items.
+- Removed repeated scroll correction after switching views so manual scrolling is no longer pulled back or visibly jittery.
+- Made mobile group actions available by long-pressing the group folder icon while keeping a normal tap dedicated to opening the group.
+- Made Save the default group dialog action so pressing Enter after typing a group name creates or renames the group instead of cancelling.
 
 ## [1.0.1] - 2026-08-20
 

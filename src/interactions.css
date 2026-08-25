@@ -163,6 +163,22 @@
 }
 
 @media (max-width: 760px) {
+  .group-list .group-row > .icon {
+    pointer-events: auto;
+    touch-action: pan-y;
+  }
+
+  .group-list .group-row > .group-menu.mobile-longpress-open {
+    display: block !important;
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .group-list .group-menu.mobile-longpress-open > summary {
+    display: none;
+  }
+
   .document-meta-row {
     align-items: center;
     flex-direction: row;
