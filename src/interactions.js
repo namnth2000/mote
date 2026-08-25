@@ -385,13 +385,29 @@ function stabilizeMarkdownEditorScroll() {
 
   let scrollTopBeforeInput = scroller.scrollTop;
   let restoreFrame = null;
+  let protectEditorHeight = false;
 
-  editor.addEventListener('beforeinput', () => {
-    scrollTopBeforeInput = scroller.scrollTop;
-  });
+  editor.addEventListener(
+    'beforeinput',
+    (event) => {
+      scrollTopBeforeInput = scroller.scrollTop;
+      protectEditorHeight = typeof event.inputType === 'string' && event.inputType.startsWith('insert');
+      if (!protectEditorHeight) return;
+
+      const currentHeight = editor.getBoundingClientRect().height;
+      if (currentHeight > 0) editor.style.minHeight = `${Math.ceil(currentHeight)}px`;
+    },
+    { capture: true }
+  );
 
   editor.addEventListener('input', () => {
     const expectedScrollTop = scrollTopBeforeInput;
+
+    if (protectEditorHeight) {
+      protectEditorHeight = false;
+      queueMicrotask(() => editor.style.removeProperty('min-height'));
+    }
+
     if (restoreFrame != null) window.cancelAnimationFrame(restoreFrame);
     restoreFrame = window.requestAnimationFrame(() => {
       restoreFrame = null;
