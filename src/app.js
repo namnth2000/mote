@@ -495,10 +495,22 @@ function renderNoteList() {
   }
 }
 
-function resizeMarkdownEditor() {
+function resizeMarkdownEditor({ force = false } = {}) {
   const textarea = el.markdownEditor;
-  textarea.style.height = 'auto';
   const minimum = Math.max(320, Math.round(window.innerHeight * 0.62));
+  const markdownMode = state.settings.editor_view === 'markdown';
+  const focusedMarkdown = document.activeElement === textarea && markdownMode;
+  const mobileMarkdown = window.innerWidth <= MOBILE_MAX && markdownMode;
+
+  if (!force && (focusedMarkdown || mobileMarkdown)) {
+    const currentHeight = textarea.getBoundingClientRect().height;
+    const overflow = Math.max(0, textarea.scrollHeight - textarea.clientHeight);
+    const nextHeight = Math.max(minimum, currentHeight + overflow);
+    if (nextHeight > currentHeight + 1) textarea.style.height = `${Math.ceil(nextHeight)}px`;
+    return;
+  }
+
+  textarea.style.height = 'auto';
   textarea.style.height = `${Math.max(minimum, textarea.scrollHeight + 4)}px`;
 }
 
@@ -563,7 +575,7 @@ function renderEditor() {
   for (const button of el.formatToolbar.querySelectorAll('button[data-format]')) button.disabled = readOnly || state.settings.editor_view !== 'markdown';
 
   renderView();
-  queueMicrotask(resizeMarkdownEditor);
+  queueMicrotask(() => resizeMarkdownEditor({ force: true }));
   updateResponsiveLayout();
 }
 
@@ -580,7 +592,7 @@ async function renderView() {
   if (isMarkdown) {
     el.outline.hidden = true;
     el.toggleOutline.hidden = true;
-    queueMicrotask(resizeMarkdownEditor);
+    queueMicrotask(() => resizeMarkdownEditor({ force: true }));
     return;
   }
 

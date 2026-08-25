@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 const markdownSource = readFileSync(new URL('../src/markdown.js', import.meta.url), 'utf8');
 const interactionsSource = readFileSync(new URL('../src/interactions.js', import.meta.url), 'utf8');
 const browserCompatSource = readFileSync(new URL('../src/browser-compat.js', import.meta.url), 'utf8');
@@ -14,11 +15,17 @@ test('invalid Mermaid blocks are rejected before render without a global error d
   assert.match(markdownSource, /if \(!parsed\)[\s\S]*?showMermaidFallback\(diagram, source\)/);
 });
 
-test('Markdown typing guards against large scroll jumps caused by auto-resize', () => {
-  assert.match(interactionsSource, /function stabilizeMarkdownEditorScroll\(\)/);
-  assert.match(interactionsSource, /addEventListener\('beforeinput'/);
-  assert.match(interactionsSource, /MAX_EDITOR_SCROLL_ADJUSTMENT/);
-  assert.match(interactionsSource, /requestAnimationFrame/);
+test('mobile Markdown editor stays grow-only through typing and keyboard resize', () => {
+  assert.match(appSource, /function resizeMarkdownEditor\(\{ force = false \} = \{\}\)/);
+  assert.match(appSource, /const mobileMarkdown = window\.innerWidth <= MOBILE_MAX && markdownMode/);
+  assert.match(appSource, /if \(!force && \(focusedMarkdown \|\| mobileMarkdown\)\)[\s\S]*?return;[\s\S]*?textarea\.style\.height = 'auto'/);
+  assert.match(appSource, /textarea\.scrollHeight - textarea\.clientHeight/);
+  assert.doesNotMatch(appSource, /markdownEditor\.addEventListener\('blur'/);
+  assert.match(appSource, /queueMicrotask\(\(\) => resizeMarkdownEditor\(\{ force: true \}\)\)/);
+  assert.match(appSource, /window\.addEventListener\('resize', \(\) => \{\s*resizeMarkdownEditor\(\)/);
+  assert.doesNotMatch(interactionsSource, /protectMarkdownEditorHeightDuringInsertion/);
+  assert.doesNotMatch(interactionsSource, /stabilizeMarkdownEditorScroll/);
+  assert.doesNotMatch(interactionsSource, /scrollTop/);
   assert.match(interactionsCss, /#markdown-editor\s*\{[\s\S]*?overflow-anchor:\s*none/);
 });
 

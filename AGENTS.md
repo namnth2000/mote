@@ -57,7 +57,18 @@ Use the checks relevant to the change. Do not automatically run every check for 
 - Preview blocks carry `data-source-line` metadata. Tables map individual rows and lists map individual items where possible because rendered heights can differ significantly from Markdown source.
 - Restore the target position once after the destination view is ready. Do not continuously correct scroll with a long-lived `MutationObserver`, timer or repeated percentage restore.
 - If the user starts scrolling or touching before a pending restore runs, user input wins and the pending restore should be cancelled.
-- Preserve the existing Markdown typing scroll stabilization in `src/interactions.js`; view switching must not interfere with selection, typing or textarea resize behavior.
+- View switching must not interfere with native input scrolling, selection, typing or textarea resize behavior.
+
+## Markdown editor typing stability
+
+- While the Markdown editor is active on mobile, typing, composition, paste and dismissing the software keyboard must not make the document viewport jump unexpectedly.
+- `resizeMarkdownEditor()` must not set the live mobile Markdown textarea to `height: auto` during input, blur or keyboard-driven `window.resize` events. The mobile live path is grow-only and uses the textarea's current height plus actual `scrollHeight - clientHeight` overflow when more room is needed.
+- Full height recalculation with `height: auto` is reserved for explicit safe transitions such as rendering a note or entering Markdown view, where the editor can be measured before the user resumes typing.
+- Do not force a full recalculation from the textarea `blur` event. On iOS, blur commonly coincides with the software keyboard closing and changing the visual viewport.
+- A large delete/cut can temporarily leave extra editor height while the same mobile Markdown view stays open. Recalculate on the next safe transition rather than destabilizing the current viewport.
+- Do not restore `.document-main.scrollTop` after normal typing or paste, and do not add input-time scroll correction in `src/interactions.js`. Delayed scroll correction can fight Safari/iOS caret behavior.
+- Do not solve typing scroll bugs with long-lived observers, repeated timers or continuous scroll correction. Native caret visibility and direct user scrolling take priority.
+- Clipboard, selection, caret, textarea auto-resize and mobile keyboard behavior are especially regression-prone on Safari/iOS and should be manually verified when touched.
 
 ## Mobile Group actions
 
@@ -99,5 +110,8 @@ For editor or Group interaction changes near the decisions above, manually verif
 
 - Preview <-> Markdown switching in a long note, especially with a table near the top of the viewport.
 - Immediate manual scroll after switching is not pulled back.
+- On mobile Markdown editing, type in the middle of a long note and paste several lines; the viewport should stay stable while the caret remains visible.
+- On mobile, dismiss the software keyboard with the keyboard Done/tick control and confirm the document remains at the same position.
+- On mobile Markdown editing, delete/cut a large amount of text; extra height may remain until the next safe render/view transition.
 - Mobile Group tap opens the Group, long press opens actions and finger movement still scrolls normally.
 - Enter saves both Create Group and Rename Group dialogs, while Cancel does not save.

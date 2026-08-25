@@ -4,7 +4,6 @@ import { deleteGroupAndMoveNotesToTrash } from './db.js';
 
 const NOTE_DRAG_TYPE = 'application/x-mote-note-id';
 const COMPACT_MAX = 1199;
-const MAX_EDITOR_SCROLL_ADJUSTMENT = 72;
 
 const TEXT = {
   vi: {
@@ -378,30 +377,6 @@ function bindStaticDropTargets() {
   bindDropTarget(document.querySelector('.nav-item[data-collection="inbox"]'), (noteId) => moveNote(noteId, null));
 }
 
-function stabilizeMarkdownEditorScroll() {
-  const editor = document.querySelector('#markdown-editor');
-  const scroller = document.querySelector('.document-main');
-  if (!editor || !scroller) return;
-
-  let scrollTopBeforeInput = scroller.scrollTop;
-  let restoreFrame = null;
-
-  editor.addEventListener('beforeinput', () => {
-    scrollTopBeforeInput = scroller.scrollTop;
-  });
-
-  editor.addEventListener('input', () => {
-    const expectedScrollTop = scrollTopBeforeInput;
-    if (restoreFrame != null) window.cancelAnimationFrame(restoreFrame);
-    restoreFrame = window.requestAnimationFrame(() => {
-      restoreFrame = null;
-      if (Math.abs(scroller.scrollTop - expectedScrollTop) <= MAX_EDITOR_SCROLL_ADJUSTMENT) return;
-      const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-      scroller.scrollTop = Math.min(expectedScrollTop, maxScrollTop);
-    });
-  });
-}
-
 function enhanceDynamicUi() {
   enhanceNoteRows();
   enhanceGroups();
@@ -417,7 +392,6 @@ const languageObserver = new MutationObserver(enhanceGroups);
 languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
 bindStaticDropTargets();
-stabilizeMarkdownEditorScroll();
 enhanceDynamicUi();
 
 document.addEventListener('click', (event) => {
