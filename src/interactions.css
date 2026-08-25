@@ -163,24 +163,20 @@
 }
 
 @media (max-width: 760px) {
-  .group-list .group-row {
-    grid-template-columns: minmax(0, 1fr) 36px;
-    gap: 2px;
-  }
-
   .group-list .group-row > .icon {
-    grid-column: 1;
-    justify-self: center;
+    pointer-events: auto;
+    touch-action: pan-y;
   }
 
-  .group-list .group-row > .group-menu {
+  .group-list .group-row > .group-menu.mobile-longpress-open {
     display: block !important;
-    grid-column: 2;
+    position: absolute;
+    width: 0;
+    height: 0;
   }
 
-  .group-list .group-menu > summary {
-    width: 36px;
-    height: 36px;
+  .group-list .group-menu.mobile-longpress-open > summary {
+    display: none;
   }
 
   .document-meta-row {
