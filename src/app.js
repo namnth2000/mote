@@ -498,9 +498,11 @@ function renderNoteList() {
 function resizeMarkdownEditor({ force = false } = {}) {
   const textarea = el.markdownEditor;
   const minimum = Math.max(320, Math.round(window.innerHeight * 0.62));
-  const focusedMarkdown = document.activeElement === textarea && state.settings.editor_view === 'markdown';
+  const markdownMode = state.settings.editor_view === 'markdown';
+  const focusedMarkdown = document.activeElement === textarea && markdownMode;
+  const mobileMarkdown = window.innerWidth <= MOBILE_MAX && markdownMode;
 
-  if (focusedMarkdown && !force) {
+  if (!force && (focusedMarkdown || mobileMarkdown)) {
     const currentHeight = textarea.getBoundingClientRect().height;
     const overflow = Math.max(0, textarea.scrollHeight - textarea.clientHeight);
     const nextHeight = Math.max(minimum, currentHeight + overflow);
@@ -573,7 +575,7 @@ function renderEditor() {
   for (const button of el.formatToolbar.querySelectorAll('button[data-format]')) button.disabled = readOnly || state.settings.editor_view !== 'markdown';
 
   renderView();
-  queueMicrotask(resizeMarkdownEditor);
+  queueMicrotask(() => resizeMarkdownEditor({ force: true }));
   updateResponsiveLayout();
 }
 
@@ -590,7 +592,7 @@ async function renderView() {
   if (isMarkdown) {
     el.outline.hidden = true;
     el.toggleOutline.hidden = true;
-    queueMicrotask(resizeMarkdownEditor);
+    queueMicrotask(() => resizeMarkdownEditor({ force: true }));
     return;
   }
 
@@ -1032,7 +1034,6 @@ function registerEventHandlers() {
     updateCurrentNote({ contentMarkdown: el.markdownEditor.value });
     resizeMarkdownEditor();
   });
-  el.markdownEditor.addEventListener('blur', () => resizeMarkdownEditor({ force: true }));
 
   el.formatToolbar.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-format]');
