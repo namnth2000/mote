@@ -29,6 +29,26 @@ function fixGroupDialogCancel() {
   );
 }
 
+function installSettingsToastTopLayerFix() {
+  const dialog = document.querySelector('#settings-dialog');
+  const openSettings = document.querySelector('#open-settings');
+  const toastRegion = document.querySelector('#toast-region');
+  const originalParent = toastRegion?.parentElement;
+  if (!dialog || !openSettings || !toastRegion || !originalParent) return;
+
+  const moveIntoDialog = () => {
+    if (!dialog.open || toastRegion.parentElement === dialog) return;
+    dialog.append(toastRegion);
+  };
+
+  const moveBack = () => {
+    if (toastRegion.parentElement !== originalParent) originalParent.append(toastRegion);
+  };
+
+  openSettings.addEventListener('click', () => queueMicrotask(moveIntoDialog));
+  dialog.addEventListener('close', moveBack);
+}
+
 function positionToolbarPopover(details) {
   const popover = details.querySelector(':scope > .toolbar-popover');
   const summary = details.querySelector(':scope > summary');
@@ -448,6 +468,7 @@ async function refreshRuntimeCache() {
 }
 
 fixGroupDialogCancel();
+installSettingsToastTopLayerFix();
 installToolbarMenuFix();
 installEditorViewSourceLineSync();
 installMobileGroupLongPress();
