@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const markdownSource = readFileSync(new URL('../src/markdown.js', import.meta.url), 'utf8');
 const interactionsSource = readFileSync(new URL('../src/interactions.js', import.meta.url), 'utf8');
 const browserCompatSource = readFileSync(new URL('../src/browser-compat.js', import.meta.url), 'utf8');
@@ -47,4 +48,9 @@ test('mobile opens the existing group menu with a long press without showing the
   assert.match(interactionsCss, /\.group-menu\.mobile-longpress-open\s*\{[\s\S]*?display:\s*block !important/);
   assert.match(interactionsCss, /\.mobile-longpress-open > summary\s*\{[\s\S]*?display:\s*none/);
   assert.doesNotMatch(interactionsCss, /grid-template-columns:\s*minmax\(0, 1fr\) 36px/);
+});
+
+test('group dialog uses Save as the implicit Enter action', () => {
+  assert.match(indexSource, /<button value="cancel" class="text-button" type="button"[^>]*>Cancel<\/button>/);
+  assert.match(indexSource, /<button value="default" class="primary-button" type="submit"[^>]*>Save<\/button>/);
 });
