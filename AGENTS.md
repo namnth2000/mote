@@ -93,6 +93,7 @@ Use the checks relevant to the change. Do not automatically run every check for 
 
 - Safari/iOS previously failed to render some self-hosted SVG icons when the sprite relied on internal SVG styles. Keep icon changes compatible with Safari/iOS and manually verify them when relevant.
 - Menus and toolbar popovers have previously been clipped by scroll containers, especially on mobile. Compatibility handling exists in `src/browser-compat.js`; do not remove or bypass it without testing the affected layouts.
+- Native modal `<dialog>` elements render in the browser top layer. A global toast outside an open modal can remain underneath its backdrop regardless of `z-index`; keep the shared toast region inside the Settings dialog while it is open and return it to the document after the dialog closes.
 - Editor selection, caret, clipboard, auto-resize and scroll behavior are regression-prone. Changes in these areas should preserve native browser behavior and use focused regression tests when practical.
 - `docs/Project_Spec.md` still labels the release as v1.0.0 while the package and changelog are at v1.0.1. Treat the current code and `CHANGELOG.md` as additional evidence of shipped behavior until the spec is synchronized.
 
