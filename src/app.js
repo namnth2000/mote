@@ -143,7 +143,7 @@ const STRINGS = {
     backupImported: 'Backup imported.',
     backupInvalid: 'Invalid backup.',
     markdownImported: 'Markdown imported.',
-    browserStorageError: 'Could not open the local browser database.',
+    browserStorageError: 'Could not open local database in this browser.',
     importConfirm: 'Importing a backup will replace all current data. Continue?',
     moveTo: 'Move to',
     formatLink: 'Link',
@@ -495,10 +495,20 @@ function renderNoteList() {
   }
 }
 
-function resizeMarkdownEditor() {
+function resizeMarkdownEditor({ force = false } = {}) {
   const textarea = el.markdownEditor;
-  textarea.style.height = 'auto';
   const minimum = Math.max(320, Math.round(window.innerHeight * 0.62));
+  const focusedMarkdown = document.activeElement === textarea && state.settings.editor_view === 'markdown';
+
+  if (focusedMarkdown && !force) {
+    const currentHeight = textarea.getBoundingClientRect().height;
+    const overflow = Math.max(0, textarea.scrollHeight - textarea.clientHeight);
+    const nextHeight = Math.max(minimum, currentHeight + overflow);
+    if (nextHeight > currentHeight + 1) textarea.style.height = `${Math.ceil(nextHeight)}px`;
+    return;
+  }
+
+  textarea.style.height = 'auto';
   textarea.style.height = `${Math.max(minimum, textarea.scrollHeight + 4)}px`;
 }
 
@@ -1022,6 +1032,7 @@ function registerEventHandlers() {
     updateCurrentNote({ contentMarkdown: el.markdownEditor.value });
     resizeMarkdownEditor();
   });
+  el.markdownEditor.addEventListener('blur', () => resizeMarkdownEditor({ force: true }));
 
   el.formatToolbar.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-format]');
