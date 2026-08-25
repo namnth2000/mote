@@ -377,36 +377,6 @@ function bindStaticDropTargets() {
   bindDropTarget(document.querySelector('.nav-item[data-collection="inbox"]'), (noteId) => moveNote(noteId, null));
 }
 
-function protectMarkdownEditorHeightDuringInsertion() {
-  const editor = document.querySelector('#markdown-editor');
-  if (!editor) return;
-
-  let heightProtected = false;
-
-  const clearProtection = () => {
-    heightProtected = false;
-    editor.style.removeProperty('min-height');
-  };
-
-  editor.addEventListener(
-    'beforeinput',
-    (event) => {
-      heightProtected = typeof event.inputType === 'string' && event.inputType.startsWith('insert');
-      if (!heightProtected) return;
-
-      const currentHeight = editor.getBoundingClientRect().height;
-      if (currentHeight > 0) editor.style.minHeight = `${Math.ceil(currentHeight)}px`;
-    },
-    { capture: true }
-  );
-
-  editor.addEventListener('input', () => {
-    if (!heightProtected) return;
-    queueMicrotask(clearProtection);
-  });
-  editor.addEventListener('blur', clearProtection);
-}
-
 function enhanceDynamicUi() {
   enhanceNoteRows();
   enhanceGroups();
@@ -422,7 +392,6 @@ const languageObserver = new MutationObserver(enhanceGroups);
 languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
 bindStaticDropTargets();
-protectMarkdownEditorHeightDuringInsertion();
 enhanceDynamicUi();
 
 document.addEventListener('click', (event) => {
