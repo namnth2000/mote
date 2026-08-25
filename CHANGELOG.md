@@ -10,7 +10,7 @@ All notable changes to Mote are documented in this file.
 - Removed repeated scroll correction after switching views so manual scrolling is no longer pulled back or visibly jittery.
 - Made mobile group actions available by long-pressing the group folder icon while keeping a normal tap dedicated to opening the group.
 - Made Save the default group dialog action so pressing Enter after typing a group name creates or renames the group instead of cancelling.
-- Prevented the mobile Markdown editor from jumping upward during typing or paste by keeping the focused textarea from transiently collapsing while it auto-resizes.
+- Improved mobile Markdown typing and paste stability by protecting insertion-time textarea height without forcing the document scroll position back after input.
 
 ## [1.0.1] - 2026-08-20
 
