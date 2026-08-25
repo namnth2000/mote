@@ -163,22 +163,22 @@
 }
 
 @media (max-width: 760px) {
-  .group-row {
+  .group-list .group-row {
     grid-template-columns: minmax(0, 1fr) 36px;
     gap: 2px;
   }
 
-  .group-row > .icon {
+  .group-list .group-row > .icon {
     grid-column: 1;
     justify-self: center;
   }
 
-  .group-row > .group-menu {
+  .group-list .group-row > .group-menu {
     display: block !important;
     grid-column: 2;
   }
 
-  .group-menu > summary {
+  .group-list .group-menu > summary {
     width: 36px;
     height: 36px;
   }
