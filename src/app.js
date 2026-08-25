@@ -143,7 +143,7 @@ const STRINGS = {
     backupImported: 'Backup imported.',
     backupInvalid: 'Invalid backup.',
     markdownImported: 'Markdown imported.',
-    browserStorageError: 'Could not open local database in this browser.',
+    browserStorageError: 'Could not open the local browser database.',
     importConfirm: 'Importing a backup will replace all current data. Continue?',
     moveTo: 'Move to',
     formatLink: 'Link',
