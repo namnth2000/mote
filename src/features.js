@@ -1,6 +1,7 @@
 import { createId, getGroups, getNotes, openDatabase, saveGroup, saveNote } from './db.js';
 import { renderMarkdown } from './markdown.js';
 import './features.css';
+import './syntax-highlighting.css';
 
 const TEXT = {
   vi: {
@@ -148,6 +149,24 @@ function ensurePrintRoot() {
   return root;
 }
 
+function namespacePrintAnchors(content) {
+  const idMap = new Map();
+
+  for (const heading of content.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')) {
+    const sourceId = heading.id;
+    const printId = `mote-print-${sourceId}`;
+    idMap.set(sourceId, printId);
+    heading.id = printId;
+  }
+
+  for (const link of content.querySelectorAll('a[href^="#"]')) {
+    const href = link.getAttribute('href');
+    if (!href || href === '#') continue;
+    const printId = idMap.get(href.slice(1));
+    if (printId) link.setAttribute('href', `#${printId}`);
+  }
+}
+
 async function exportRichPdf(note) {
   const root = ensurePrintRoot();
   const title = root.querySelector('.print-note-title');
@@ -158,6 +177,7 @@ async function exportRichPdf(note) {
   title.textContent = note.title;
   content.replaceChildren();
   await renderMarkdown(note.markdown, content, { theme: 'light' });
+  namespacePrintAnchors(content);
 
   const previousTitle = document.title;
   document.title = safeFileName(note.title);
