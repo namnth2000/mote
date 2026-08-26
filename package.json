@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/copy-static.mjs",
     "preview": "vite preview",
-    "check": "node --check src/app.js && node --check src/db.js && node --check src/format.js && node --check src/markdown.js && node --check src/interactions.js && node --check src/browser-compat.js && node --check src/features.js && node --check src/task-interactions.js && node --check src/tasks.js && node --check scripts/copy-static.mjs && node --check sw.js",
+    "check": "node --check src/app.js && node --check src/db.js && node --check src/format.js && node --check src/markdown.js && node --check src/interactions.js && node --check src/browser-compat.js && node --check src/features.js && node --check src/task-interactions.js && node --check src/tasks.js && node --check src/markdown-keyboard.js && node --check src/toast-top-layer.js && node --check scripts/copy-static.mjs && node --check sw.js",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
