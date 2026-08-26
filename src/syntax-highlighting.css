@@ -43,3 +43,56 @@ html[data-theme='light'] .hljs-meta,
 html[data-theme='light'] .hljs-attr {
   color: #673b63;
 }
+
+@media print {
+  html.mote-print-ready .print-note-content [class*='hljs-'] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-comment,
+  html.mote-print-ready .print-note-content .hljs-quote,
+  html.mote-print-ready .print-note-content .hljs-doctag {
+    color: #466946 !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-keyword,
+  html.mote-print-ready .print-note-content .hljs-selector-tag,
+  html.mote-print-ready .print-note-content .hljs-section,
+  html.mote-print-ready .print-note-content .hljs-meta .hljs-keyword {
+    color: #a43236 !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-string,
+  html.mote-print-ready .print-note-content .hljs-regexp,
+  html.mote-print-ready .print-note-content .hljs-link {
+    color: #7f4a12 !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-number,
+  html.mote-print-ready .print-note-content .hljs-literal,
+  html.mote-print-ready .print-note-content .hljs-symbol,
+  html.mote-print-ready .print-note-content .hljs-bullet {
+    color: #566a1e !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-title,
+  html.mote-print-ready .print-note-content .hljs-function .hljs-title {
+    color: #93452f !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-title.class_,
+  html.mote-print-ready .print-note-content .hljs-class .hljs-title {
+    color: #a43236 !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-built_in,
+  html.mote-print-ready .print-note-content .hljs-type {
+    color: #0f5f8b !important;
+  }
+
+  html.mote-print-ready .print-note-content .hljs-meta,
+  html.mote-print-ready .print-note-content .hljs-attr {
+    color: #673b63 !important;
+  }
+}
