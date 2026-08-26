@@ -1,3 +1,4 @@
+import './toast-top-layer.js';
 import { formatSelection } from './format.js';
 
 const editor = document.querySelector('#markdown-editor');
