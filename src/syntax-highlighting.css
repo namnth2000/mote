@@ -1,0 +1,45 @@
+html[data-theme='light'] .hljs-comment,
+html[data-theme='light'] .hljs-quote,
+html[data-theme='light'] .hljs-doctag {
+  color: #466946;
+}
+
+html[data-theme='light'] .hljs-keyword,
+html[data-theme='light'] .hljs-selector-tag,
+html[data-theme='light'] .hljs-section,
+html[data-theme='light'] .hljs-meta .hljs-keyword {
+  color: #a43236;
+}
+
+html[data-theme='light'] .hljs-string,
+html[data-theme='light'] .hljs-regexp,
+html[data-theme='light'] .hljs-link {
+  color: #7f4a12;
+}
+
+html[data-theme='light'] .hljs-number,
+html[data-theme='light'] .hljs-literal,
+html[data-theme='light'] .hljs-symbol,
+html[data-theme='light'] .hljs-bullet {
+  color: #566a1e;
+}
+
+html[data-theme='light'] .hljs-title,
+html[data-theme='light'] .hljs-function .hljs-title {
+  color: #93452f;
+}
+
+html[data-theme='light'] .hljs-title.class_,
+html[data-theme='light'] .hljs-class .hljs-title {
+  color: #a43236;
+}
+
+html[data-theme='light'] .hljs-built_in,
+html[data-theme='light'] .hljs-type {
+  color: #0f5f8b;
+}
+
+html[data-theme='light'] .hljs-meta,
+html[data-theme='light'] .hljs-attr {
+  color: #673b63;
+}
