@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "Mote - Markdown Notes",
-  "short_name": "Mote",
+  "short_name": "Mote - Markdown Notes",
   "description": "A minimal, local-first Markdown note app.",
   "start_url": "/",
   "scope": "/",
