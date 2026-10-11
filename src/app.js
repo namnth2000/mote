@@ -74,6 +74,8 @@ const STRINGS = {
     renameGroup: 'Đổi tên nhóm',
     confirmDeleteGroup: 'Xóa nhóm này? Các ghi chú trong nhóm sẽ được chuyển về Inbox.',
     confirmDeleteForever: 'Xóa vĩnh viễn ghi chú này? Thao tác này không thể hoàn tác.',
+    copyCode: 'Copy nội dung code',
+    codeCopied: 'Đã copy nội dung code.',
     copied: 'Đã copy Markdown.',
     copyFailed: 'Không thể copy vào clipboard.',
     exported: 'Đã tải ghi chú.',
@@ -136,6 +138,8 @@ const STRINGS = {
     renameGroup: 'Rename group',
     confirmDeleteGroup: 'Delete this group? Its notes will be moved to Inbox.',
     confirmDeleteForever: 'Delete this note forever? This cannot be undone.',
+    copyCode: 'Copy code',
+    codeCopied: 'Code copied.',
     copied: 'Markdown copied.',
     copyFailed: 'Could not copy to clipboard.',
     exported: 'Note downloaded.',
@@ -597,7 +601,13 @@ async function renderView() {
   }
 
   const revision = ++state.previewRevision;
-  const headings = await renderMarkdown(note.contentMarkdown ?? '', el.previewView, { theme: resolvedTheme() });
+  const headings = await renderMarkdown(note.contentMarkdown ?? '', el.previewView, {
+    theme: resolvedTheme(),
+    copyLabel: t('copyCode'),
+    copiedLabel: t('codeCopied'),
+    copyFailedLabel: t('copyFailed'),
+    onCopy: (success) => toast(t(success ? 'codeCopied' : 'copyFailed'))
+  });
   if (revision !== state.previewRevision) return;
   state.currentHeadings = headings;
   renderOutline();
