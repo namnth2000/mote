@@ -193,7 +193,63 @@ function hardenLinks(container) {
   }
 }
 
-export async function renderMarkdown(source, container, { theme = 'light' } = {}) {
+function addCodeCopyButtons(container, { copyLabel, copiedLabel, copyFailedLabel, onCopy }) {
+  for (const code of container.querySelectorAll('pre > code')) {
+    const pre = code.parentElement;
+    const text = code.textContent ?? '';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block';
+    if (pre.dataset.sourceLine) wrapper.dataset.sourceLine = pre.dataset.sourceLine;
+    const toolbar = document.createElement('div');
+    toolbar.className = 'code-block-toolbar';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'icon-button code-copy-button';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('icon');
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '/assets/icons/mote-icons.svg#copy');
+    svg.append(use);
+    button.append(svg);
+    const setLabel = (label) => {
+      button.title = label;
+      button.setAttribute('aria-label', label);
+    };
+    setLabel(copyLabel);
+    let resetTimer;
+    button.addEventListener('click', async () => {
+      clearTimeout(resetTimer);
+      button.disabled = true;
+      try {
+        await navigator.clipboard.writeText(text);
+        setLabel(copiedLabel);
+        use.setAttribute('href', '/assets/icons/mote-icons.svg#check');
+        onCopy?.(true);
+      } catch {
+        setLabel(copyFailedLabel);
+        onCopy?.(false);
+      } finally {
+        button.disabled = false;
+        resetTimer = setTimeout(() => {
+          setLabel(copyLabel);
+          use.setAttribute('href', '/assets/icons/mote-icons.svg#copy');
+        }, 2000);
+      }
+    });
+    toolbar.append(button);
+    pre.replaceWith(wrapper);
+    wrapper.append(toolbar, pre);
+  }
+}
+
+export async function renderMarkdown(source, container, {
+  theme = 'light',
+  copyLabel = 'Copy code',
+  copiedLabel = 'Code copied.',
+  copyFailedLabel = 'Could not copy to clipboard.',
+  onCopy
+} = {}) {
   const revision = String(++renderRevision);
   const html = marked.parse(source || '');
   container.innerHTML = DOMPurify.sanitize(html, {
@@ -206,6 +262,7 @@ export async function renderMarkdown(source, container, { theme = 'light' } = {}
   const headings = assignHeadingIds(container);
   await renderMermaidBlocks(container, theme);
   highlightCode(container);
+  addCodeCopyButtons(container, { copyLabel, copiedLabel, copyFailedLabel, onCopy });
   container.dataset.renderRevision = revision;
   return headings;
 }

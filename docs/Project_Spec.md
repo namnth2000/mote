@@ -123,6 +123,7 @@ Supported Preview content includes:
 - inline code
 - fenced code blocks
 - syntax highlighting
+- copy the full contents of a code block from Preview, preserving indentation and line breaks
 - tables
 - images referenced by Markdown URLs
 - Mermaid diagrams
