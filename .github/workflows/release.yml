@@ -7,42 +7,32 @@ on:
     paths:
       - '.github/releases/**'
       - '.github/workflows/release.yml'
-  issues:
-    types:
-      - opened
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   release:
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'issues' &&
-      github.actor == github.repository_owner &&
-      startsWith(github.event.issue.title, '[release] ')) ||
-      (github.event_name == 'pull_request' &&
-      github.actor == github.repository_owner &&
-      startsWith(github.event.pull_request.title, '[release] '))
-    runs-on: ubuntu-latest
-
+    runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
 
-      - name: Install dependencies
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
         run: npm install
 
       - name: Syntax checks
@@ -51,33 +41,47 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Production build
-        run: npm run build
-
-      - name: Resolve release version
+      - name: Resolve and validate release version
         id: version
         shell: bash
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          TAURI_VERSION="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          CARGO_VERSION="$(sed -nE 's/^version = "([^"]+)"$/\1/p' src-tauri/Cargo.toml | head -1)"
+          test "$VERSION" = "$TAURI_VERSION"
+          test "$VERSION" = "$CARGO_VERSION"
+          test -f ".github/releases/v${VERSION}.md"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Publish GitHub Release
+      - name: Bundle Windows installer
+        run: npm run desktop:build
+
+      - name: Publish Windows release with installer
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
-        shell: bash
         run: |
-          NOTES_FILE=".github/releases/${TAG}.md"
-          test -f "$NOTES_FILE"
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists. Nothing to do."
-            exit 0
+          shopt -s nullglob
+          installers=(src-tauri/target/release/bundle/nsis/*-setup.exe)
+          if [ "${#installers[@]}" -ne 1 ]; then
+            echo "Expected exactly one Windows NSIS installer" >&2
+            exit 1
           fi
 
-          gh release create "$TAG" \
-            --target "$(git rev-parse HEAD)" \
-            --title "Mote $TAG" \
-            --notes-file "$NOTES_FILE" \
-            --latest
+          installer="${installers[0]}"
+          (cd "$(dirname "$installer")" && sha256sum "$(basename "$installer")") > SHA256SUMS.txt
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$installer" SHA256SUMS.txt --clobber
+          else
+            flags=()
+            if [[ "$TAG" == *-* ]]; then
+              flags+=(--prerelease)
+            fi
+            gh release create "$TAG" "$installer" SHA256SUMS.txt \
+              --target "$GITHUB_SHA" \
+              --title "Mote $TAG" \
+              --notes-file ".github/releases/${TAG}.md" \
+              "${flags[@]}"
+          fi
