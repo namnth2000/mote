@@ -46,6 +46,7 @@ Mote intentionally keeps the stack small:
 - highlight.js
 - Mermaid
 - PWA hosted on Cloudflare Pages
+- Tauri 2 wrapper for Windows Desktop (same frontend, separate local data)
 
 The Markdown editing surface uses the browser's native `<textarea>`. UI and Preview use Inter; Markdown editing and code use a native monospace stack.
 
@@ -67,6 +68,24 @@ npm run build
 ```
 
 Production output is generated in `dist/`.
+
+## Windows Desktop (Tauri)
+
+Mote Desktop runs the same Vite/Vanilla JS frontend in a native Tauri window. The first target is **Windows**; the Web/PWA build and Cloudflare deployment remain unchanged.
+
+Prerequisites: Node.js 20+, Rust, Microsoft C++ Build Tools with *Desktop development with C++*, and Microsoft Edge WebView2.
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+The Windows NSIS `.exe` installer is generated under `src-tauri/target/release/bundle/nsis/`. A separate GitHub Actions **Desktop build** workflow can also build the installer on Windows.
+
+**Data is not shared automatically** between Mote Web/PWA and Mote Desktop. Each has its own local IndexedDB storage. To move notes, use **Settings > Export backup** in the source app and **Import backup** in the destination app (import replaces the destination library).
+
+See [Desktop guide](docs/Desktop.md) for build, release, portability and test notes.
 
 ## Project structure
 
@@ -103,6 +122,7 @@ mote/
 - [Database Design](docs/Database_Design.md)
 - [Data Portability](docs/Data_Portability.md)
 - [Deployment](docs/Deployment.md)
+- [Windows Desktop](docs/Desktop.md)
 
 `docs/mockup.html` is a visual reference. The production implementation is the source of truth for current behavior.
 

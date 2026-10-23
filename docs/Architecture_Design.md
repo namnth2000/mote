@@ -227,7 +227,28 @@ PWA files:
 
 The service worker caches the app shell and same-origin static assets. IndexedDB note data is independent from the Cache Storage used by the service worker.
 
-## 13. Security and privacy
+## 13. Windows Desktop wrapper
+
+`src-tauri/` adds a Tauri 2 desktop host to the existing Vite output:
+
+```text
+Shared HTML/CSS/Vanilla JS frontend
+        |
+       Vite
+     /      \
+Cloudflare  Tauri WebView2 (Windows)
+Pages      |
+IndexedDB  IndexedDB (separate application profile)
+```
+
+- Build the same `dist/` as Web/PWA, without switching frameworks.
+- Tauri serves bundled frontend assets. No remote Mote site, API or backend is loaded.
+- The desktop WebView's origin/data directory is isolated from Mote's browser origin.
+- Keep the existing JSON backup/restore pathway to migrate notes manually.
+- Native APIs stay disabled unless there is a demonstrated need and a narrowly scoped capability.
+- Desktop packaging is handled by a dedicated workflow; web publishing and existing release automation remain separate.
+
+## 14. Security and privacy
 
 - Sanitize rendered Markdown before inserting it into Preview.
 - Mermaid uses strict security settings.
@@ -235,14 +256,14 @@ The service worker caches the app shell and same-origin static assets. IndexedDB
 - Do not upload or remotely log raw note content.
 - Remote links/images may contact their own origins when used by the browser.
 
-## 14. Error handling
+## 15. Error handling
 
 - database open/write failure -> visible error, never pretend the note was saved
 - Markdown/Mermaid render failure -> preserve source and show a non-destructive fallback
 - backup validation failure -> do not modify current database
 - file import failure -> do not destroy existing notes
 
-## 15. Testing
+## 16. Testing
 
 Automated checks cover:
 
@@ -261,6 +282,6 @@ Manual browser testing should cover:
 - mobile keyboard and navigation
 - favicon/PWA installation
 
-## 16. Complexity rule
+## 17. Complexity rule
 
 Add a new abstraction only when the current implementation has a demonstrated limitation. Avoid adding frameworks, editor engines or backend layers in anticipation of hypothetical requirements.
