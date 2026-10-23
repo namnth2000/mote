@@ -4,7 +4,7 @@
 
 Mote is a minimal, local-first Markdown note app for writing and organizing notes without an account or backend.
 
-Current version: **1.0.0**.
+Current version: **1.1.0-rc.1** (Windows Desktop preview).
 
 ## Features
 

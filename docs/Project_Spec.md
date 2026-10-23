@@ -4,7 +4,7 @@
 
 Mote is a minimal, local-first Markdown note app focused on reliable writing, simple organization and ownership of the user's notes.
 
-Current release: **v1.0.0**.
+Current preview release: **v1.1.0-rc.1**. Previous stable release: **v1.0.1**.
 
 ## 1. Goals
 

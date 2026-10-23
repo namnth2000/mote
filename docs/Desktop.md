@@ -30,7 +30,7 @@ npm run desktop:build
 
 Installer output: `src-tauri/target/release/bundle/nsis/*-setup.exe`.
 
-The dedicated **Desktop build** GitHub Actions workflow also runs on pull requests touching the desktop build, and can be started manually from **Actions > Desktop build > Run workflow**. On success, download the `mote-windows-installer` artifact. The workflow does **not** publish or sign a GitHub Release.
+The dedicated **Desktop build** GitHub Actions workflow also runs on pull requests touching the desktop build, and can be started manually from **Actions > Desktop build > Run workflow**. On success, download the `mote-windows-installer` artifact. The workflow does **not** publish or sign a GitHub Release. The separate **Release** workflow bundles the NSIS installer and attaches it to the GitHub Release for the version on `main`.
 
 ## Data ownership and migration
 
@@ -65,8 +65,10 @@ The current import/export and PDF interfaces still use browser APIs. **They are 
 - Keep app version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `package.json` aligned before a release.
 - Complete smoke testing and run the Windows installer workflow.
 - Desktop builds are unsigned until code signing is configured. Windows SmartScreen may show a warning.
-- Attach the verified installer to the intended GitHub Release manually. Do not overwrite existing tags or assume a GitHub Actions artifact is an official release.
-- Do not publish Desktop until the import/export and PDF smoke tests have passed.
+- To prepare a Desktop release, align the 3 versions and add `.github/releases/v<version>.md` on `main`. The **Release** workflow checks and builds the Windows installer, then publishes a GitHub Release with the `.exe` and `SHA256SUMS.txt` assets.
+- Until the manual Windows smoke tests above are complete, use a SemVer preview tag such as `v1.1.0-rc.1`; the workflow marks preview versions as GitHub pre-releases.
+- Before declaring a stable Desktop release, complete the import/export and PDF smoke tests.
+- Do not overwrite an existing published release tag. Desktop installers are unsigned until code signing is configured.
 
 ## Non-goals for v1
 

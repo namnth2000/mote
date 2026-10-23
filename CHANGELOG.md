@@ -4,6 +4,10 @@ All notable changes to Mote are documented in this file.
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+## [1.1.0-rc.1] - 2026-10-23
+
 ### Added
 
 - Added a Windows Desktop packaging target using Tauri 2 and the existing Mote frontend, with a separate Windows installer build workflow.
