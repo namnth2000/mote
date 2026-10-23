@@ -35,6 +35,9 @@ Mote is a responsive Web/PWA application for:
 - tablet browsers
 - mobile browsers
 - installed PWA where supported
+- Windows Desktop, using a Tauri 2 wrapper around the same frontend
+
+The Windows application retains local IndexedDB storage inside its WebView. Desktop notes are separate from notes stored in the browser/PWA. Migration uses the existing JSON export/restore flow; there is no sync account or background upload.
 
 ## 4. Navigation and collections
 

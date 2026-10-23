@@ -1,0 +1,12 @@
+[package]
+name = "mote-desktop"
+version = "1.0.1"
+description = "Mote - local-first Markdown notes"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }

@@ -14,6 +14,7 @@ Keep this file focused on reusable technical context and durable implementation 
 - Markdown Preview uses Marked, DOMPurify, highlight.js and Mermaid.
 - PWA behavior uses `manifest.webmanifest` and `sw.js`.
 - Static hosting is Cloudflare Pages.
+- Tauri 2 wraps the existing Vite app for Windows Desktop under `src-tauri/`. Do not fork the frontend or silently move notes out of IndexedDB.
 
 Important source areas:
 
@@ -33,6 +34,8 @@ npm run dev
 npm run check
 npm test
 npm run build
+npm run desktop:dev    # Windows: Rust + WebView2 + C++ Build Tools
+npm run desktop:build  # Windows NSIS installer
 ```
 
 Use the checks relevant to the change. Do not automatically run every check for a small change that can be verified safely with a narrower check or manual test. Run broader checks when the change affects shared logic, persistence, build behavior or other high-risk areas.
@@ -45,6 +48,8 @@ Use the checks relevant to the change. Do not automatically run every check for 
 - Preserve native browser editing behavior. Do not replace the `<textarea>` with `contenteditable`, a rich-text document model or an editor framework without a confirmed product need.
 - Keep the architecture small. Add dependencies or abstractions only when the current implementation has a demonstrated limitation.
 - Keep Mote local-first. Note content must not be uploaded, remotely logged or sent to an external service by default.
+- Web/PWA and the Tauri WebView use separate origin-scoped IndexedDB stores. They do not sync. Preserve the JSON backup/restore format for user-controlled migration.
+- Keep the Tauri capability surface minimal; do not introduce broad filesystem, shell, network or updater permissions just for the wrapper.
 - Preserve existing user data when changing IndexedDB schemas, imports or backup formats.
 - Sanitize rendered Markdown before inserting it into the Preview DOM. A render failure must never alter Markdown source.
 - Fixed typography and the existing visual language are product decisions, not settings to expand casually.

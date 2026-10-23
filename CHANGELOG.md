@@ -6,6 +6,8 @@ All notable changes to Mote are documented in this file.
 
 ### Added
 
+- Added a Windows Desktop packaging target using Tauri 2 and the existing Mote frontend, with a separate Windows installer build workflow.
+- Documented backup/restore as the supported way to move notes between Web/PWA and Desktop.
 - Added Markdown editor Tab indentation: Tab inserts two spaces at the caret or indents selected lines, while Shift+Tab removes up to two leading spaces from the current or selected lines.
 
 ### Fixed
