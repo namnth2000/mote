@@ -6,6 +6,13 @@ All notable changes to Mote are documented in this file.
 
 No unreleased changes yet.
 
+## [1.1.0] - 2026-10-23
+
+### Release
+
+- Promoted the Windows Desktop release candidate to stable after an initial successful Windows app test. No new product features or data migrations were introduced during stabilization.
+- Published the Windows x64 NSIS installer through the automated GitHub Release workflow.
+
 ## [1.1.0-rc.1] - 2026-10-23
 
 ### Added

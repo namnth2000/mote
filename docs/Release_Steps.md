@@ -2,16 +2,16 @@
 
 This document is the source of truth for releasing future Mote versions manually or asking an AI assistant to do the release work.
 
-Current stable release line starts at `v1.0.0`. Desktop previews start at `v1.1.0-rc.1`.
+Current Windows Desktop stable release: `v1.1.0`. The previous preview was `v1.1.0-rc.1`.
 
-## Automated Desktop pre-release
+## Automated Desktop release
 
 For the Tauri Windows build, the `.github/workflows/release.yml` workflow is the release path:
 
 1. Bump the version consistently in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`.
 2. Update `CHANGELOG.md` and add `.github/releases/v<version>.md`.
-3. Push the prepared changes to `main`. The Release workflow validates the frontend, builds an NSIS installer on Windows, and creates/updates the matching GitHub Release with its `.exe` and checksum file.
-4. Verify the Release page has binary assets and inspect the Actions logs. Test the installer on a real Windows PC before announcing a stable release.
+3. Merge the prepared release PR to `main`. The Release workflow validates the frontend, builds an NSIS installer on Windows, and creates the matching GitHub Release with its `.exe` and checksum file.
+4. Verify the Release page has binary assets and inspect the Actions logs. Install or upgrade on a real Windows PC and test notes persistence, backup/restore, import/export and PDF before promoting the stable release publicly.
 5. Pre-release versions containing a hyphen (such as `1.1.0-rc.1`) are published as GitHub **pre-releases**. No manual tag creation is needed for this automated path.
 
 The manual tag/release instructions below remain available when the automated workflow is intentionally not used. Do not run them concurrently with an automated release for the same tag.
