@@ -4,7 +4,13 @@
 
 Mote is a minimal, local-first Markdown note app for writing and organizing notes without an account or backend.
 
-Current version: **1.1.0-rc.1** (Windows Desktop preview).
+Current version: **1.1.0** (Windows Desktop + Web/PWA).
+
+- [Download Mote for Windows x64 (.exe)](https://github.com/namnth2000/mote/releases/download/v1.1.0/Mote_1.1.0_x64-setup.exe)
+- [View all releases](https://github.com/namnth2000/mote/releases)
+- [Use Mote on the web](https://mote.namnth.com)
+
+The Windows installer is currently unsigned; Windows SmartScreen may show an unknown-publisher warning. The Windows app stores notes locally and separately from Web/PWA. Back up important notes periodically.
 
 ## Features
 
@@ -81,7 +87,7 @@ npm run desktop:dev
 npm run desktop:build
 ```
 
-The Windows NSIS `.exe` installer is generated under `src-tauri/target/release/bundle/nsis/`. A separate GitHub Actions **Desktop build** workflow can also build the installer on Windows.
+The Windows NSIS `.exe` installer is generated under `src-tauri/target/release/bundle/nsis/`. GitHub Actions automatically publishes the installer and SHA-256 checksum on each prepared release. A separate **Desktop build** workflow validates proposed changes on Windows.
 
 **Data is not shared automatically** between Mote Web/PWA and Mote Desktop. Each has its own local IndexedDB storage. To move notes, use **Settings > Export backup** in the source app and **Import backup** in the destination app (import replaces the destination library).
 

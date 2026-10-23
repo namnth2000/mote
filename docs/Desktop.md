@@ -66,8 +66,8 @@ The current import/export and PDF interfaces still use browser APIs. **They are 
 - Complete smoke testing and run the Windows installer workflow.
 - Desktop builds are unsigned until code signing is configured. Windows SmartScreen may show a warning.
 - To prepare a Desktop release, align the 3 versions and add `.github/releases/v<version>.md` on `main`. The **Release** workflow checks and builds the Windows installer, then publishes a GitHub Release with the `.exe` and `SHA256SUMS.txt` assets.
-- Until the manual Windows smoke tests above are complete, use a SemVer preview tag such as `v1.1.0-rc.1`; the workflow marks preview versions as GitHub pre-releases.
-- Before declaring a stable Desktop release, complete the import/export and PDF smoke tests.
+- Preview tags such as `v1.1.0-rc.1` are GitHub pre-releases; stable tags such as `v1.1.0` are normal GitHub releases.
+- Before distributing a Desktop release broadly, verify installation/upgrade, notes persisting across restarts, import/export, backup/restore, offline use and PDF/print on a real Windows PC.
 - Do not overwrite an existing published release tag. Desktop installers are unsigned until code signing is configured.
 
 ## Non-goals for v1
